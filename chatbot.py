@@ -156,7 +156,14 @@ def extract_best_sentence(user_question, text):
     question = user_question.lower()
    
     # 1. Gestion spécifique des matériaux
-    if any(word in question for word in ["matériau", "matériaux", "materiau", "materiaux", "aluminium", "construction", "design"]):
+    if any(word in question for word in [
+    "matériau",
+    "matériaux",
+    "materiau",
+    "materiaux",
+    "aluminium",
+    "construction"
+]):
         for s in sentences:
             if any(m in s.lower() for m in ["aluminium", "gorilla", "verre", "titane", "cadre", "dos", "armor", "design"]):
                 return s
@@ -213,7 +220,7 @@ def get_answer(user_question):
         "wifi", "wi-fi", "bluetooth", "5g", "double sim", "sim", "source", "officiel",
         "officielle", "lien", "site", "performance", "performant", "snapdragon",
         "puce", "cpu", "nuit", "photo de nuit", "mode nuit", "autonomie", 
-        "précommande", "precommander", "commander", "temps", "météo", "meteo" # Ajouté pour tolérer "quel temps fait-il" sans crasher bêtement
+        "précommande", "precommander", "commander" 
     ]
 
     ai_pattern = r'\b(ai|ia|intelligence artificielle|galaxy ai)\b'
@@ -237,10 +244,30 @@ def get_answer(user_question):
         for s in re.split(r'(?<=[.!?])\s+', paragraph):
             if "galaxy ai" in s.lower() or "intelligence" in s.lower():
                 return s, 1.0
+    # Cas spécial : photos de nuit
+    if "nuit" in question or "photo de nuit" in question or "photos de nuit" in question or "mode nuit" in question:
+         for s in re.split(r'(?<=[.!?])\s+', paragraph):
+            if "vidéo de nuit" in s.lower() or "video de nuit" in s.lower():
+                return s, 1.0
 
     # 5. Utiliser le mapping FAQ standard (gère le Wi-Fi, Bluetooth, etc.)
     for keyword, column in faq_mapping.items():
         if keyword in question:
+            if keyword in ["wifi", "wi-fi"]:
+                network_text = product["specifications_5"].iloc[0]
+
+                if "wi-fi 7" in network_text.lower() or "wifi 7" in network_text.lower():
+                    return "Le téléphone prend en charge le Wi-Fi 7.", 1.0
+
+                return network_text, 1.0
+
+            if keyword == "bluetooth":
+                network_text = product["specifications_5"].iloc[0]
+
+                if "bluetooth 6.0" in network_text.lower():
+                    return "Le téléphone utilise le Bluetooth 6.0.", 1.0
+
+                return network_text, 1.0
             if column == "caractéristiques":
                 answer = extract_best_sentence(user_question, paragraph)
             elif column == "specifications_4":
