@@ -174,16 +174,14 @@ def extract_best_sentence(user_question, text):
             or "moins de bruit" in sentence_lower):
                 return sentence
     # Cas spécial : résolution caméra
-    if any(word in question for word in [
-    "mégapixel",
-    "mégapixels",
-    "mégapixel",
-    "mp",
-    "capteur"]):
+    # Cas spécial : résolution caméra
+    camera_pattern = r'\bmp\b|mégapixel|mégapixels|capteur'
+    if re.search(camera_pattern, question):
         for sentence in sentences:
             if "200 mp" in sentence.lower():
                return sentence
    
+    # 1. Gestion spécifique des matériaux
     # 1. Gestion spécifique des matériaux
     if any(word in question for word in [
     "matériau",
@@ -193,8 +191,14 @@ def extract_best_sentence(user_question, text):
     "aluminium",
     "construction"
 ]):
+        strong_materials = ["aluminium", "titane", "gorilla", "verre", "armor"]
+        weak_materials = ["cadre", "dos"]
+        # Priorité aux phrases contenant un vrai nom de matériau
         for s in sentences:
-            if any(m in s.lower() for m in ["aluminium", "gorilla", "verre", "titane", "cadre", "dos", "armor", "design"]):
+            if any(m in s.lower() for m in strong_materials):
+                return s
+        for s in sentences:
+            if any(m in s.lower() for m in weak_materials):
                 return s
 
     # 2. Gestion de la batterie / autonomie / charge
@@ -241,7 +245,7 @@ def get_answer(user_question):
         "coûte", "cout", "tarif", "écran", "camera", "caméra", "photo", "zoom",
         "batterie", "charge", "garantie", "couleur", "couleurs", "noir", "blanc",
         "bleu", "violet", "design", "matériau", "materiau", "matériaux", "materiaux",
-        "aluminium", "galaxy ai", "intelligence", "artificielle", "ia", "ai", 
+        "aluminium", "galaxy ai", "intelligence", "artificielle", 
         "now brief", "now nudge", "processeur", "fiche", "rafraîchissement",
         "rafraichissement", "hz", "macro", "mégapixels", "megapixels", "mégapixel",
         "megapixel", "mega pixel", "mega pixels", "ip68", "capteur", "arrière", 
@@ -297,20 +301,18 @@ def get_answer(user_question):
     for keyword, column in faq_mapping.items():
         if keyword in question:
             if keyword in ["wifi", "wi-fi"]:
-                network_text = product["specifications_5"].iloc[0]
-
-                if "wi-fi 7" in network_text.lower() or "wifi 7" in network_text.lower():
-                    return "Le téléphone prend en charge le Wi-Fi 7.", 1.0
-
-                return network_text, 1.0
+                paragraph = product["caractéristiques"].iloc[0]
+                for s in re.split(r'(?<=[.!?])\s+', paragraph):
+                    if "wi-fi 7" in s.lower() or "wifi 7" in s.lower():
+                        return "Le téléphone prend en charge le Wi-Fi 7.", 1.0
+                return "Aucune information précise sur le Wi-Fi n'a été trouvée.", 0.3
 
             if keyword == "bluetooth":
-                network_text = product["specifications_5"].iloc[0]
-
-                if "bluetooth 6.0" in network_text.lower():
-                    return "Le téléphone utilise le Bluetooth 6.0.", 1.0
-
-                return network_text, 1.0
+                paragraph = product["caractéristiques"].iloc[0]
+                for s in re.split(r'(?<=[.!?])\s+', paragraph):
+                    if "bluetooth 6.0" in s.lower():
+                        return "Le téléphone utilise le Bluetooth 6.0.", 1.0
+                return "Aucune information précise sur le Bluetooth n'a été trouvée.", 0.3
             if column == "caractéristiques":
                 answer = extract_best_sentence(user_question, paragraph)
             elif column == "specifications_4":
@@ -327,7 +329,7 @@ def get_answer(user_question):
     # 6. Recherche par similarité (TF-IDF) en dernier recours
     best_question, score = search_question(user_question)
     
-    if score < 0.2:
+    if score < 0.35:
         return (
             "Je n'ai pas trouvé d'information précise concernant votre demande sur le Samsung Galaxy S26 Ultra.",
             score
