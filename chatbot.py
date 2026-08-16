@@ -45,6 +45,7 @@ faq_mapping = {
     "connectivité": "specifications_5",
     "connectivite": "specifications_5",
     "wifi": "specifications_5",
+    "wi-fi": "specifications_5",
     "bluetooth": "specifications_5",
     "batterie": "caractéristiques",
     "autonomie": "caractéristiques",
@@ -53,9 +54,6 @@ faq_mapping = {
     "charger": "caractéristiques",
     "wireless": "caractéristiques",
     "powershare": "caractéristiques",
-    "galaxy ai": "caractéristiques",
-    "intelligence artificielle": "caractéristiques",
-   
     "now brief": "caractéristiques",
     "now nudge": "caractéristiques",
     "couleur": "caractéristiques",
@@ -124,7 +122,7 @@ product = pd.read_csv(
     "data/Samsung_S26_Ultra_final_clean.csv",
     encoding="utf-8-sig"
 )
-product.columns = product.columns.str.strip()  # Removes invisible spaces around headers
+product.columns = product.columns.str.strip()
 
 vectorizer = joblib.load(
     "models/tfidf_vectorizer.pkl"
@@ -153,89 +151,25 @@ def search_question(user_question):
     return faq.iloc[index]["question"], score
 
 def extract_best_sentence(user_question, text):
-    sentences = re.split(r'(?<=[.!?])\s+|(?<=\bleu)\s+', text)
+    sentences = re.split(r'(?<=[.!?])\s+', text)
     sentences = [s.strip() for s in sentences if s.strip()]
     question = user_question.lower()
    
-    if "nuit" in question or "photo de nuit" in question or "photos de nuit" in question:
-        for sentence in sentences:
-            if "vidéo de nuit" in sentence.lower() or "video de nuit" in sentence.lower():
-                return sentence
+    # 1. Gestion spécifique des matériaux
+    if any(word in question for word in ["matériau", "matériaux", "materiau", "materiaux", "aluminium", "construction", "design"]):
+        for s in sentences:
+            if any(m in s.lower() for m in ["aluminium", "gorilla", "verre", "titane", "cadre", "dos", "armor", "design"]):
+                return s
 
-    if any(word in question for word in ["couleur", "couleurs", "noir", "blanc", "bleu", "violet"]):
-        for sentence in sentences:
-            if "il est proposé en violet" in sentence.lower():
-               return sentence
+    # 2. Gestion de la batterie / autonomie / charge
+    if any(word in question for word in ["batterie", "autonomie", "mah", "charge", "charger"]):
+        for s in sentences:
+            if any(m in s.lower() for m in ["batterie", "5000", "5 000", "mah", "charge", "autonomie", "heures"]):
+                return s
 
-    if (
-    "mégapixel" in question
-    or "mégapixels" in question
-    or "capteur" in question
-    or re.search(r"\bmp\b", question)):
-        for sentence in sentences:
-            if "200 mp" in sentence.lower():
-                return sentence
-
-    keyword_mapping = {
-        "charger": ["charge", "30 minutes", "wireless powershare"],
-        "charge": ["charge", "30 minutes", "wireless powershare"],
-        "batterie": ["batterie", "5000 mah", "31 heures"],
-        "autonomie": ["batterie", "31 heures"],
-        "galaxy ai": ["galaxy ai", "now brief", "now nudge"],
-        "design": ["design", "aluminium", "armor"],
-        "aluminium": ["aluminium", "armor"],
-        "ip68": ["ip68"],
-        "zoom": ["100x", "space zoom"],
-        "photo": ["200 mp", "caméra", "photo"],
-        "caméra": ["200 mp", "caméra"],
-        "camera": ["200 mp", "camera"],
-        "rafraîchissement": ["120hz", "120 hz", "taux de rafraîchissement"],
-        "rafraichissement": ["120hz", "120 hz", "taux de rafraîchissement"],
-        "hz": ["120hz", "120 hz"],
-        "matériaux": ["aluminium", "armor", "gorilla"],
-        "materiaux": ["aluminium", "armor", "gorilla"],
-        "matériau": ["aluminium", "armor", "gorilla"],
-        "construction": ["aluminium", "armor", "gorilla"],
-    }
-
-    if any(word in question for word in ["intelligence artificielle", "ia", "ai", "galaxy ai"]):
-        for sentence in sentences:
-            if "galaxy ai" in sentence.lower() or "intelligence" in sentence.lower():
-                return sentence
-
-    if "zoom" in question:
-        for sentence in sentences:
-            if "space zoom" in sentence.lower():
-                return sentence
-
-    if "précommande" in question or "precommande" in question or "commander" in question:
-       for sentence in sentences:
-           if "précommander" in sentence.lower() or "precommander" in sentence.lower():
-             return sentence
-
-    if "autonomie" in question:
-       for sentence in sentences:
-           if "batterie" in sentence.lower() or "5 000 mah" in sentence.lower():
-              return sentence
-
-    for key, words in keyword_mapping.items():
-        if key in question:
-            for sentence in sentences:
-                if any(word.lower() in sentence.lower() for word in words):
-                    return sentence
-
+    # Par défaut, similarité TF-IDF sur les phrases du texte
     processed_sentences = [preprocess(s) for s in sentences]
     processed_question = preprocess(user_question)
-
-    if any(word in question for word in ["matériau", "matériaux", "materiau", "materiaux", "aluminium", "construction"]):
-        for sentence in sentences:
-            if any(m in sentence.lower() for m in ["aluminium", "gorilla", "verre", "titane", "cadre", "dos"]):
-                return sentence
-
-    if "résolution" in question and ("caméra" in question or "camera" in question):
-        for sentence in sentences:
-             if "200 mp" in sentence.lower():
-                return sentence
 
     tfidf = TfidfVectorizer()
     sentence_vectors = tfidf.fit_transform(processed_sentences)
@@ -253,20 +187,19 @@ def get_answer(user_question):
     if any(word in question for word in goodbye_words):
         return "Au revoir ! J'espère avoir pu t'aider. N'hésite pas si tu as d'autres questions sur le Samsung Galaxy S26 Ultra.", 1.0
 
-    # 2. Filtre des produits concurrents hors sujet (Bloqué en premier pour éviter les confusions)
+    # 2. Filtre des produits concurrents hors sujet (UNIQUEMENT les autres marques de téléphones)
     other_products = [
         "iphone", "apple", "xiaomi", "redmi", "oppo",
         "huawei", "honor", "realme", "vivo", "google pixel",
         "nokia", "motorola"
     ]
-    if any(product_name in question for product_name in other_products):
+    if any(prod in question for prod in other_products):
         return (
-            "Je réponds uniquement aux questions concernant le Samsung Galaxy S26 Ultra.",
+            "Désolé, je ne peux pas répondre à cette question. Je me spécialise uniquement dans les caractéristiques du Samsung Galaxy S26 Ultra.",
             0
         )
 
-    # 3. Vérification des mots-clés autorisés (Sécurité globale)
-    # 3. Vérification des mots-clés autorisés (on remet "ia" et "ai" ici)
+    # 3. SÉCURITÉ : Liste des mots autorisés (avec gestion propre de l'IA par regex \b)
     allowed_words = [
         "samsung", "galaxy", "s26", "ultra", "téléphone", "portable", "prix",
         "coûte", "cout", "tarif", "écran", "camera", "caméra", "photo", "zoom",
@@ -277,15 +210,14 @@ def get_answer(user_question):
         "rafraichissement", "hz", "macro", "mégapixels", "megapixels", "mégapixel",
         "megapixel", "mega pixel", "mega pixels", "ip68", "capteur", "arrière", 
         "poussiére", "poussière", "arriere", "connectivité", "connectivite",
-        "wifi", "bluetooth", "5g", "double sim", "sim", "source", "officiel",
+        "wifi", "wi-fi", "bluetooth", "5g", "double sim", "sim", "source", "officiel",
         "officielle", "lien", "site", "performance", "performant", "snapdragon",
         "puce", "cpu", "nuit", "photo de nuit", "mode nuit", "autonomie", 
-        "précommande", "precommander", "commander"
+        "précommande", "precommander", "commander", "temps", "météo", "meteo" # Ajouté pour tolérer "quel temps fait-il" sans crasher bêtement
     ]
 
     ai_pattern = r'\b(ai|ia|intelligence artificielle|galaxy ai)\b'
 
-    # SÉCURITÉ : On bloque si aucun mot autorisé n'est présent ET que ce n'est pas non plus un "ia"/"ai" isolé
     has_allowed = any(word in question for word in allowed_words) or bool(re.search(ai_pattern, question))
     
     if not has_allowed:
@@ -295,56 +227,18 @@ def get_answer(user_question):
         )
 
     paragraph = product["caractéristiques"].iloc[0]
-    sentences = [s.strip() for s in re.split(r'(?<=[.!?])\s+', paragraph) if s.strip()]
 
-    # 4. PRIORITÉS ABSOLUES (Traitement direct sans passer par le mapping)
-    
-    # A. Photo / Vidéo de nuit (expressions ciblées)
-    if any(w in question for w in ["photo de nuit", "photos de nuit", "mode nuit", "video de nuit", "vidéo de nuit"]):
-        for s in sentences:
-            if "nuit" in s.lower():
-                return s, 1.0
-
-    # B. Now Brief & Now Nudge
-    if "now brief" in question or "brief" in question:
-        for s in sentences:
-            if "now brief" in s.lower():
-                return s, 1.0
-
-    if "now nudge" in question or "nudge" in question:
-        for s in sentences:
-            if "now nudge" in s.lower():
-                return s, 1.0
-
-    # C. Galaxy AI (Mot entier avec \b pour éviter le piège de Cristiano)
-    # GESTION INTELLIGENTE DE GALAXY AI
-    ai_pattern = r'\b(ai|ia|intelligence artificielle|galaxy ai)\b'
+    # 4. Traitement spécifique des questions sur l'IA / CPU
     if re.search(ai_pattern, question):
-        paragraph = product["caractéristiques"].iloc[0]
-        sentences = [s.strip() for s in re.split(r'(?<=[.!?])\s+', paragraph) if s.strip()]
-        
-        # 1. Si l'utilisateur demande spécifiquement les performances, le NPU ou le CPU
         if any(w in question for w in ["npu", "cpu", "performance", "performant", "processeur"]):
-            for s in sentences:
-                if "npu" in s.lower():
+            for s in re.split(r'(?<=[.!?])\s+', paragraph):
+                if "npu" in s.lower() or "processeur" in s.lower():
                     return s, 1.0
-        
-        # 2. Par défaut pour l'IA, on priorise les fonctions pratiques (retouche, creative studio, etc.)
-        for s in sentences:
-            if "retouche photo" in s.lower() or "creative studio" in s.lower():
-                return s, 1.0
-                
-        # 3. Sécurité de secours
-        for s in sentences:
-            if "galaxy ai" in s.lower():
+        for s in re.split(r'(?<=[.!?])\s+', paragraph):
+            if "galaxy ai" in s.lower() or "intelligence" in s.lower():
                 return s, 1.0
 
-    # D. Cas spécial : matériaux
-    if any(word in question for word in ["matériau", "materiau", "matériaux", "materiaux", "aluminium", "construction"]):
-        answer = extract_best_sentence(user_question, paragraph)
-        return answer, 1.0
-
-    # 5. Utiliser le mapping FAQ standard
+    # 5. Utiliser le mapping FAQ standard (gère le Wi-Fi, Bluetooth, etc.)
     for keyword, column in faq_mapping.items():
         if keyword in question:
             if column == "caractéristiques":
@@ -356,6 +250,7 @@ def get_answer(user_question):
                 else:
                     answer = camera_text
             else:
+                # Pour specifications_5 (Wi-Fi, Bluetooth, 5G, SIM) ou specifications_2, etc.
                 answer = product[column].iloc[0]
             return answer, 1.0
 
@@ -368,4 +263,4 @@ def get_answer(user_question):
             score
         )
         
-    return product["caractéristiques"].iloc[0], score
+    return extract_best_sentence(user_question, paragraph), score
