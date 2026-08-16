@@ -154,6 +154,35 @@ def extract_best_sentence(user_question, text):
     sentences = re.split(r'(?<=[.!?])\s+', text)
     sentences = [s.strip() for s in sentences if s.strip()]
     question = user_question.lower()
+    # Cas spécial : photos / vidéo de nuit
+    # Cas spécial : photos de nuit
+    if any(word in question for word in [
+    "nuit",
+    "photo de nuit",
+    "photos de nuit",
+    "mode nuit"]):
+        for sentence in sentences:
+            sentence_lower = sentence.lower()
+
+            if (
+            "vidéo de nuit" in sentence_lower
+            or "video de nuit" in sentence_lower
+            or "photo de nuit" in sentence_lower
+            or "photos de nuit" in sentence_lower
+            or "faible luminosité" in sentence_lower
+            or "faible lumière" in sentence_lower
+            or "moins de bruit" in sentence_lower):
+                return sentence
+    # Cas spécial : résolution caméra
+    if any(word in question for word in [
+    "mégapixel",
+    "mégapixels",
+    "mégapixel",
+    "mp",
+    "capteur"]):
+        for sentence in sentences:
+            if "200 mp" in sentence.lower():
+               return sentence
    
     # 1. Gestion spécifique des matériaux
     if any(word in question for word in [
@@ -245,10 +274,24 @@ def get_answer(user_question):
             if "galaxy ai" in s.lower() or "intelligence" in s.lower():
                 return s, 1.0
     # Cas spécial : photos de nuit
-    if "nuit" in question or "photo de nuit" in question or "photos de nuit" in question or "mode nuit" in question:
-         for s in re.split(r'(?<=[.!?])\s+', paragraph):
-            if "vidéo de nuit" in s.lower() or "video de nuit" in s.lower():
-                return s, 1.0
+    # Cas spécial : photos de nuit
+    if any(word in question for word in [
+    "nuit",
+    "photo de nuit",
+    "photos de nuit",
+    "mode nuit"]):
+        for s in re.split(r'(?<=[.!?])\s+', paragraph):
+            s_lower = s.lower()
+
+            if (
+            "vidéo de nuit" in s_lower
+            or "video de nuit" in s_lower
+            or "photo de nuit" in s_lower
+            or "photos de nuit" in s_lower
+            or "faible luminosité" in s_lower
+            or "faible lumière" in s_lower
+            or "moins de bruit" in s_lower):
+               return s, 1.0
 
     # 5. Utiliser le mapping FAQ standard (gère le Wi-Fi, Bluetooth, etc.)
     for keyword, column in faq_mapping.items():
