@@ -269,14 +269,36 @@ def get_answer(user_question):
     paragraph = product["caractéristiques"].iloc[0]
 
     # 4. Traitement spécifique des questions sur l'IA / CPU
+    # 4. Traitement spécifique des questions sur l'IA / CPU
     if re.search(ai_pattern, question):
-        if any(w in question for w in ["npu", "cpu", "performance", "performant", "processeur"]):
+
+    # Questions sur les performances / processeur
+        if any(w in question for w in [
+        "npu",
+        "cpu",
+        "performance",
+        "performant",
+        "processeur",
+        "puce",
+        "snapdragon"]):
             for s in re.split(r'(?<=[.!?])\s+', paragraph):
-                if "npu" in s.lower() or "processeur" in s.lower():
+                s_lower = s.lower()
+                if "npu" in s_lower or "processeur" in s_lower or "snapdragon" in s_lower:
                     return s, 1.0
-        for s in re.split(r'(?<=[.!?])\s+', paragraph):
-            if "galaxy ai" in s.lower() or "intelligence" in s.lower():
-                return s, 1.0
+
+    # Questions générales sur Galaxy AI
+    for s in re.split(r'(?<=[.!?])\s+', paragraph):
+        s_lower = s.lower()
+
+        # On cherche une phrase qui décrit réellement les fonctionnalités
+        if (
+            "galaxy ai facilite" in s_lower
+            or "retouche photo" in s_lower
+            or "creative studio" in s_lower
+            or "now nudge" in s_lower
+            or "now brief" in s_lower
+        ):
+            return s, 1.0
     # Cas spécial : photos de nuit
     # Cas spécial : photos de nuit
     if any(word in question for word in [
