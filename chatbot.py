@@ -268,56 +268,36 @@ def get_answer(user_question):
 
     paragraph = product["caractéristiques"].iloc[0]
 
+    
     # 4. Traitement spécifique des questions sur l'IA / CPU
-    # 4. Traitement spécifique des questions sur l'IA / CPU
-    if re.search(ai_pattern, question):
-
     # Questions sur les performances / processeur
-        if any(w in question for w in [
-        "npu",
-        "cpu",
-        "performance",
-        "performant",
-        "processeur",
-        "puce",
-        "snapdragon"]):
-            for s in re.split(r'(?<=[.!?])\s+', paragraph):
-                s_lower = s.lower()
-                if "npu" in s_lower or "processeur" in s_lower or "snapdragon" in s_lower:
-                    return s, 1.0
-
+    if any(w in question for w in [
+    "npu",
+    "cpu",
+    "performance",
+    "performant",
+    "processeur",
+    "puce",
+    "snapdragon"]):
+        for s in re.split(r'(?<=[.!?])\s+', paragraph):
+            s_lower = s.lower()
+            if (
+            "npu" in s_lower
+            or "processeur" in s_lower
+            or "snapdragon" in s_lower
+            or "cpu" in s_lower):
+                return s, 1.0
     # Questions générales sur Galaxy AI
-    for s in re.split(r'(?<=[.!?])\s+', paragraph):
-        s_lower = s.lower()
-
-        # On cherche une phrase qui décrit réellement les fonctionnalités
-        if (
+    if re.search(ai_pattern, question):
+        for s in re.split(r'(?<=[.!?])\s+', paragraph):
+            s_lower = s.lower()
+            if (
             "galaxy ai facilite" in s_lower
             or "retouche photo" in s_lower
             or "creative studio" in s_lower
             or "now nudge" in s_lower
-            or "now brief" in s_lower
-        ):
-            return s, 1.0
-    # Cas spécial : photos de nuit
-    # Cas spécial : photos de nuit
-    if any(word in question for word in [
-    "nuit",
-    "photo de nuit",
-    "photos de nuit",
-    "mode nuit"]):
-        for s in re.split(r'(?<=[.!?])\s+', paragraph):
-            s_lower = s.lower()
-
-            if (
-            "vidéo de nuit" in s_lower
-            or "video de nuit" in s_lower
-            or "photo de nuit" in s_lower
-            or "photos de nuit" in s_lower
-            or "faible luminosité" in s_lower
-            or "faible lumière" in s_lower
-            or "moins de bruit" in s_lower):
-               return s, 1.0
+            or "now brief" in s_lower):
+                return s, 1.0
 
     # 5. Utiliser le mapping FAQ standard (gère le Wi-Fi, Bluetooth, etc.)
     for keyword, column in faq_mapping.items():
