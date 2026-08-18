@@ -93,6 +93,13 @@ faq_mapping = {
     "site": "source",
     "officiel": "source",
     "officielle": "source",
+    "power share": "caractéristiques",
+    "résistant à l'eau": "caractéristiques",
+    "resistant a l'eau": "caractéristiques",
+    "résistant à l’eau": "caractéristiques",
+    "resistant a l’eau": "caractéristiques",
+    "étanche": "caractéristiques",
+    "etanche": "caractéristiques",
 }
 
 import re
@@ -154,13 +161,39 @@ def extract_best_sentence(user_question, text):
     sentences = re.split(r'(?<=[.!?])\s+', text)
     sentences = [s.strip() for s in sentences if s.strip()]
     question = user_question.lower()
+        # Gestion des questions générales sur la qualité des photos
+    if any(word in question for word in [
+        "bon pour prendre les photos",
+        "bon pour les photos",
+        "bon en photo",
+        "qualité des photos",
+        "qualité photo",
+        "qualite des photos",
+        "qualite photo"
+    ]):
+        for s in sentences:
+            s_lower = s.lower()
+
+            if (
+                "caméra" in s_lower
+                or "camera" in s_lower
+                or "photo" in s_lower
+                or "photographie" in s_lower
+            ):
+                return s
     # Cas spécial : photos / vidéo de nuit
     # Cas spécial : photos de nuit
     if any(word in question for word in [
     "nuit",
     "photo de nuit",
     "photos de nuit",
-    "mode nuit"]):
+    "mode nuit",
+    "photos nocturnes",
+    "photographie de nuit",
+    "qualité des photos de nuit",
+    "comment sont les photos de nuit",
+    "photo en basse lumière",
+    "photos en basse lumière"]):
         for sentence in sentences:
             sentence_lower = sentence.lower()
 
@@ -180,7 +213,7 @@ def extract_best_sentence(user_question, text):
         for sentence in sentences:
             if "200 mp" in sentence.lower():
                return sentence
-   
+    
     # 1. Gestion spécifique des matériaux
     # 1. Gestion spécifique des matériaux
     if any(word in question for word in [
@@ -200,7 +233,43 @@ def extract_best_sentence(user_question, text):
         for s in sentences:
             if any(m in s.lower() for m in weak_materials):
                 return s
+        # Gestion des questions sur la précommande
+    if any(word in question for word in [
+        "précommande",
+        "precommande",
+        "précommander",
+        "precommander",
+        "disponible en précommande"
+    ]):
+        for s in sentences:
+            s_lower = s.lower()
 
+            if (
+                "précommande" in s_lower
+                or "precommande" in s_lower
+                or "précommander" in s_lower
+                or "precommander" in s_lower
+            ):
+                return s
+    # Gestion des questions sur la commande
+    if any(word in question for word in [
+        "commander",
+        "comment commander",
+        "comment peut-on le commander",
+        "comment le commander",
+        "où commander",
+        "ou commander",
+        "acheter"
+    ]):
+        for s in sentences:
+            s_lower = s.lower()
+
+            if (
+                "commander" in s_lower
+                or "commande" in s_lower
+                or "disponible chez samsung" in s_lower
+            ):
+                return s
     # 2. Gestion de la batterie / autonomie / charge
     if any(word in question for word in ["batterie", "autonomie", "mah", "charge", "charger"]):
         for s in sentences:
@@ -244,7 +313,8 @@ def get_answer(user_question):
         "samsung", "galaxy", "s26", "ultra", "téléphone", "portable", "prix",
         "coûte", "cout", "tarif", "écran", "camera", "caméra", "photo", "zoom",
         "batterie", "charge", "garantie", "couleur", "couleurs", "noir", "blanc",
-        "bleu", "violet", "design", "matériau", "materiau", "matériaux", "materiaux",
+        "bleu", "violet","powershare", "power share", "eau", "étanche", "etanche",
+        "résistant", "resistant", "design", "matériau", "materiau", "matériaux", "materiaux",
         "aluminium", "galaxy ai", "intelligence", "artificielle", 
         "now brief", "now nudge", "processeur", "fiche", "rafraîchissement",
         "rafraichissement", "hz", "macro", "mégapixels", "megapixels", "mégapixel",
@@ -309,13 +379,41 @@ def get_answer(user_question):
                     if "wi-fi 7" in s.lower() or "wifi 7" in s.lower():
                         return "Le téléphone prend en charge le Wi-Fi 7.", 1.0
                 return "Aucune information précise sur le Wi-Fi n'a été trouvée.", 0.3
+            if keyword in ["powershare", "power share"]:
+                paragraph = product["caractéristiques"].iloc[0]
 
+                for s in re.split(r'(?<=[.!?])\s+', paragraph):
+                    if "powershare" in s.lower() or "power share" in s.lower():
+                        return s, 1.0
+
+                return "Aucune information précise sur PowerShare n'a été trouvée.", 0.3
             if keyword == "bluetooth":
                 paragraph = product["caractéristiques"].iloc[0]
                 for s in re.split(r'(?<=[.!?])\s+', paragraph):
                     if "bluetooth 6.0" in s.lower():
                         return "Le téléphone utilise le Bluetooth 6.0.", 1.0
                 return "Aucune information précise sur le Bluetooth n'a été trouvée.", 0.3
+            if keyword in [
+                "résistant à l'eau",
+                "resistant a l'eau",
+                "résistant à l’eau",
+                "resistant a l’eau",
+                "étanche",
+                "etanche"]:
+                paragraph = product["caractéristiques"].iloc[0]
+
+                for s in re.split(r'(?<=[.!?])\s+', paragraph):
+                    s_lower = s.lower()
+
+                    if (
+                        "ip68" in s_lower
+                        or "eau" in s_lower
+                        or "résistant à l'eau" in s_lower
+                        or "resistant a l'eau" in s_lower
+                    ):
+                        return s, 1.0
+
+                return "Aucune information précise sur la résistance à l'eau n'a été trouvée.", 0.3
             if column == "caractéristiques":
                 answer = extract_best_sentence(user_question, paragraph)
             elif column == "specifications_4":
