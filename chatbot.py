@@ -253,7 +253,7 @@ def get_answer(user_question):
         "wifi", "wi-fi", "bluetooth", "5g", "double sim", "sim", "source", "officiel",
         "officielle", "lien", "site", "performance", "performant", "snapdragon",
         "puce", "cpu", "nuit", "photo de nuit", "mode nuit", "autonomie", 
-        "précommande", "precommander", "commander" 
+        "précommande", "precommander", "commander","puissant","puissance" 
     ]
 
     ai_pattern = r'\b(ai|ia|intelligence artificielle|galaxy ai)\b'
