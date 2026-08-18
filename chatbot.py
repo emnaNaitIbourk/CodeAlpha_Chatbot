@@ -271,22 +271,23 @@ def get_answer(user_question):
     
     # 4. Traitement spécifique des questions sur l'IA / CPU
     # Questions sur les performances / processeur
-    if any(w in question for w in [
-    "npu",
+    # 4. Questions sur le processeur et les performances
+
+    performance_keywords = [
+    "processeur",
     "cpu",
+    "puce",
+    "snapdragon",
     "performance",
     "performant",
-    "processeur",
-    "puce",
-    "snapdragon"]):
-        for s in re.split(r'(?<=[.!?])\s+', paragraph):
-            s_lower = s.lower()
-            if (
-            "npu" in s_lower
-            or "processeur" in s_lower
-            or "snapdragon" in s_lower
-            or "cpu" in s_lower):
-                return s, 1.0
+    "puissant",
+    "puissance",
+    "npu"]
+
+    if any(keyword in question for keyword in performance_keywords):
+        processor_text = str(product["specifications_2"].iloc[0])
+        # Retourner directement l'information du processeur
+        return processor_text, 1.0
     # Questions générales sur Galaxy AI
     if re.search(ai_pattern, question):
         for s in re.split(r'(?<=[.!?])\s+', paragraph):
