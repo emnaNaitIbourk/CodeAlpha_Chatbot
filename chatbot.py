@@ -100,6 +100,16 @@ faq_mapping = {
     "resistant a l’eau": "caractéristiques",
     "étanche": "caractéristiques",
     "etanche": "caractéristiques",
+    "commander": "caractéristiques",
+    "acheter": "caractéristiques",
+    "achat": "caractéristiques",
+    "où acheter": "caractéristiques",
+    "ou acheter": "caractéristiques",
+    "où peut-on acheter": "caractéristiques",
+    "ou peut on acheter": "caractéristiques",
+    "où trouver": "caractéristiques",
+    "ou trouver": "caractéristiques",
+    "disponible à l'achat": "caractéristiques",
     
 }
 
