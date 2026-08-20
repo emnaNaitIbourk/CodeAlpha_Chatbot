@@ -344,7 +344,8 @@ def get_answer(user_question):
         "basse lumière",
         "faible luminosité",
         "faible lumière",
-        "mode nuit"
+        "mode nuit",
+        "mode nocturne"
     ]):
         sentences = re.split(r'(?<=[.!?])\s+', paragraph)
 
