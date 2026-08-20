@@ -230,42 +230,38 @@ def extract_best_sentence(user_question, text):
         return "Aucune information précise sur la précommande n'a été trouvée."
     
     # Gestion des questions sur la commande / achat
-    # Gestion des questions sur la commande / achat
-        # Gestion des questions sur la commande / achat
     if any(word in question for word in [
-        "commander",
-        "comment commander",
-        "comment peut-on le commander",
-        "comment le commander",
-        "où commander",
-        "ou commander",
-        "acheter",
-        "où acheter",
-        "ou acheter",
-        "acheter le téléphone",
-        "acheter ce téléphone",
-        "où peut-on acheter",
-        "ou peut on acheter",
-        "où trouver le téléphone",
-        "ou trouver le téléphone"
-    ]):
-        for s in sentences:
-            s_lower = s.lower()
+    "commander",
+    "comment commander",
+    "comment peut-on le commander",
+    "comment le commander",
+    "où commander",
+    "ou commander",
+    "acheter",
+    "où acheter",
+    "ou acheter",
+    "acheter le téléphone",
+    "acheter ce téléphone",
+    "où peut-on acheter",
+    "ou peut on acheter",
+    "où trouver le téléphone",
+    "ou trouver le téléphone"]):
+    # Chercher une phrase qui parle réellement de commande/achat
+     for s in sentences:
+        s_lower = s.lower()
 
-            if any(word in s_lower for word in [
-                "samsung tunisie",
-                "disponible chez samsung",
-                "disponible à l'achat",
-                "disponible",
-                "commander",
-                "commande",
-                "acheter",
-                "achat",
-                "précommande"
-            ]):
-                return s.strip()
+        if any(word in s_lower for word in [
+            "commander",
+            "commande",
+            "acheter",
+            "achat",
+            "précommande",
+            "précommander"
+        ]):
+            return s.strip()
 
-        return "Aucune information précise sur la commande ou l'achat n'a été trouvée."
+    # Si aucune phrase spécifique n'est trouvée
+    return "Le Samsung Galaxy S26 Ultra est disponible chez Samsung Tunisie."
     # Par défaut, similarité TF-IDF sur les phrases du texte
     processed_sentences = [preprocess(s) for s in sentences]
     processed_question = preprocess(user_question)
