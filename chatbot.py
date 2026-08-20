@@ -100,10 +100,7 @@ faq_mapping = {
     "resistant a l’eau": "caractéristiques",
     "étanche": "caractéristiques",
     "etanche": "caractéristiques",
-    "acheter": "caractéristiques",
-    "achat": "caractéristiques",
-    "où acheter": "caractéristiques",
-    "ou acheter": "caractéristiques",
+    
 }
 
 import re
