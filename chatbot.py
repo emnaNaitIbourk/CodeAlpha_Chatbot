@@ -315,7 +315,7 @@ def get_answer(user_question):
         "poussiére", "poussière", "arriere", "connectivité", "connectivite",
         "wifi", "wi-fi", "bluetooth", "5g", "double sim", "sim", "source", "officiel",
         "officielle", "lien", "site", "performance", "performant", "snapdragon",
-        "puce", "cpu", "nuit", "photo de nuit", "mode nuit", "autonomie","où peut-on acheter", 
+        "puce", "cpu", "nuit", "photo de nuit","mode nocturne", "mode nuit", "autonomie","où peut-on acheter", 
         "précommande","precommande","précommander","precommander","commander","acheter","achat","acheter le téléphone","où acheter","ou acheter","disponible à l'achat","puissant","puissance"
     ]
 
