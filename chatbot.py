@@ -1,3 +1,21 @@
+import re
+import pandas as pd
+import joblib
+
+from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.feature_extraction.text import TfidfVectorizer
+
+from nltk.tokenize import word_tokenize
+from nltk.corpus import stopwords
+
+import nltk
+
+nltk.download("stopwords")
+nltk.download("punkt")
+nltk.download("punkt_tab")
+
+stop_words = set(stopwords.words("french"))
+
 faq_mapping = {
     "prix": "price",
     "coûte": "price",
@@ -100,7 +118,6 @@ faq_mapping = {
     "resistant a l’eau": "caractéristiques",
     "étanche": "caractéristiques",
     "etanche": "caractéristiques",
-    "commander": "caractéristiques",
     "acheter": "caractéristiques",
     "achat": "caractéristiques",
     "où acheter": "caractéristiques",
@@ -110,26 +127,7 @@ faq_mapping = {
     "où trouver": "caractéristiques",
     "ou trouver": "caractéristiques",
     "disponible à l'achat": "caractéristiques",
-    
 }
-
-import re
-import pandas as pd
-import joblib
-
-from sklearn.metrics.pairwise import cosine_similarity
-from sklearn.feature_extraction.text import TfidfVectorizer
-
-from nltk.tokenize import word_tokenize
-from nltk.corpus import stopwords
-
-import nltk
-
-nltk.download("stopwords")
-nltk.download("punkt")
-nltk.download("punkt_tab")
-
-stop_words = set(stopwords.words("french"))
 
 faq = pd.read_csv(
     "data/Samsung_S26_Ultra_questions.csv",
@@ -172,6 +170,7 @@ def extract_best_sentence(user_question, text):
     sentences = re.split(r'(?<=[.!?])\s+', text)
     sentences = [s.strip() for s in sentences if s.strip()]
     question = user_question.lower()
+    
     # Gestion des questions générales sur la qualité des photos
     if any(word in question for word in [
         "bon pour prendre les photos",
@@ -184,7 +183,6 @@ def extract_best_sentence(user_question, text):
     ]):
         for s in sentences:
             s_lower = s.lower()
-
             if (
                 "caméra" in s_lower
                 or "camera" in s_lower
@@ -192,6 +190,7 @@ def extract_best_sentence(user_question, text):
                 or "photographie" in s_lower
             ):
                 return s
+                
     # Cas spécial : résolution caméra
     camera_pattern = r'\bmp\b|mégapixel|mégapixels|capteur'
     if re.search(camera_pattern, question):
@@ -201,7 +200,7 @@ def extract_best_sentence(user_question, text):
 
     # 1. Gestion spécifique des matériaux
     if any(word in question for word in [
-        "matériau", "matériaux", "materiau", "materiaux", "aluminium", "construction"
+        "matériau", "matériaux", "materiau", "materiaux", "aluminium", "construction", "titane", "gorilla", "verre"
     ]):
         strong_materials = ["aluminium", "titane", "gorilla", "verre", "armor"]
         weak_materials = ["cadre", "dos"]
@@ -211,11 +210,13 @@ def extract_best_sentence(user_question, text):
         for s in sentences:
             if any(m in s.lower() for m in weak_materials):
                 return s
+
     # 2. Gestion de la batterie / autonomie / charge
     if any(word in question for word in ["batterie", "autonomie", "mah", "charge", "charger"]):
         for s in sentences:
             if any(m in s.lower() for m in ["batterie", "5000", "5 000", "mah", "charge", "autonomie", "heures"]):
                 return s
+
     # Questions sur la précommande
     if any(word in question for word in [
         "précommande",
@@ -225,7 +226,6 @@ def extract_best_sentence(user_question, text):
         "disponible en précommande"]):
         for s in sentences:
             s_lower = s.lower()
-
             if (
                 "précommande" in s_lower
                 or "precommande" in s_lower
@@ -233,7 +233,6 @@ def extract_best_sentence(user_question, text):
                 or "precommander" in s_lower
             ):
                 return s
-
         return "Aucune information précise sur la précommande n'a été trouvée."
     
     # Gestion des questions sur la commande / achat
@@ -253,23 +252,19 @@ def extract_best_sentence(user_question, text):
     "ou peut on acheter",
     "où trouver le téléphone",
     "ou trouver le téléphone"]):
-    # Chercher une phrase qui parle réellement de commande/achat
-     for s in sentences:
-        s_lower = s.lower()
+        for s in sentences:
+            s_lower = s.lower()
+            if any(word in s_lower for word in [
+                "commander",
+                "commande",
+                "acheter",
+                "achat",
+                "précommande",
+                "précommander"
+            ]):
+                return s.strip()
 
-        if any(word in s_lower for word in [
-            "commander",
-            "commande",
-            "acheter",
-            "achat",
-            "précommande",
-            "précommander"
-        ]):
-            return s.strip()
-
-    # Si aucune phrase spécifique n'est trouvée
-    return "Le Samsung Galaxy S26 Ultra est disponible chez Samsung Tunisie."
-    # Par défaut, similarité TF-IDF sur les phrases du texte
+    # Si aucune phrase spécifique n'est trouvée par règles, similarité TF-IDF sur les phrases du texte
     processed_sentences = [preprocess(s) for s in sentences]
     processed_question = preprocess(user_question)
 
@@ -289,7 +284,7 @@ def get_answer(user_question):
     if any(word in question for word in goodbye_words):
         return "Au revoir ! J'espère avoir pu t'aider. N'hésite pas si tu as d'autres questions sur le Samsung Galaxy S26 Ultra.", 1.0
 
-    # 2. Filtre des produits concurrents hors sujet (UNIQUEMENT les autres marques de téléphones)
+    # 2. Filtre des produits concurrents hors sujet
     other_products = [
         "iphone", "apple", "xiaomi", "redmi", "oppo",
         "huawei", "honor", "realme", "vivo", "google pixel",
@@ -301,7 +296,7 @@ def get_answer(user_question):
             0
         )
 
-    # 3. SÉCURITÉ : Liste des mots autorisés (avec gestion propre de l'IA par regex \b)
+    # 3. SÉCURITÉ : Liste des mots autorisés
     allowed_words = [
         "samsung", "galaxy", "s26", "ultra", "téléphone", "portable", "prix",
         "coûte", "cout", "tarif", "écran", "camera", "caméra", "photo", "zoom",
@@ -315,8 +310,10 @@ def get_answer(user_question):
         "poussiére", "poussière", "arriere", "connectivité", "connectivite",
         "wifi", "wi-fi", "bluetooth", "5g", "double sim", "sim", "source", "officiel",
         "officielle", "lien", "site", "performance", "performant", "snapdragon",
-        "puce", "cpu", "nuit", "photo de nuit","mode nocturne", "mode nuit", "autonomie","où peut-on acheter", 
-        "précommande","precommande","précommander","precommander","commander","acheter","achat","acheter le téléphone","où acheter","ou acheter","disponible à l'achat","puissant","puissance"
+        "puce", "cpu", "nuit", "photo de nuit", "mode nocturne", "mode nuit", "autonomie", 
+        "où peut-on acheter", "précommande", "precommande", "précommander", "precommander", 
+        "commander", "acheter", "achat", "acheter le téléphone", "où acheter", "ou acheter", 
+        "disponible à l'achat", "puissant", "puissance"
     ]
 
     ai_pattern = r'\b(ai|ia|intelligence artificielle|galaxy ai)\b'
@@ -330,165 +327,121 @@ def get_answer(user_question):
         )
 
     paragraph = product["caractéristiques"].iloc[0]
-    # Questions sur les photos de nuit
-        # Questions sur les photos de nuit
+
+    # ==========================================
+    # === PRIORITÉ ABSOLUE : CAS SPÉCIFIQUES ===
+    # ==========================================
+
+    # A. Photos de nuit / mode nocturne
     if any(word in question for word in [
-        "nuit",
-        "photo de nuit",
-        "photos de nuit",
-        "comment sont les photos de nuit",
-        "qualité des photos de nuit",
-        "qualite des photos de nuit",
-        "photos nocturnes",
-        "photographie de nuit",
-        "basse lumière",
-        "faible luminosité",
-        "faible lumière",
-        "mode nuit",
-        "mode nocturne"
+        "nuit", "photo de nuit", "photos de nuit", "comment sont les photos de nuit",
+        "qualité des photos de nuit", "qualite des photos de nuit", "photos nocturnes",
+        "photographie de nuit", "basse lumière", "faible luminosité", "faible lumière",
+        "mode nuit", "mode nocturne"
     ]):
         sentences = re.split(r'(?<=[.!?])\s+', paragraph)
-
         for s in sentences:
             s_lower = s.lower()
-
             if any(word in s_lower for word in [
-                "photo de nuit",
-                "photos de nuit",
-                "mode nuit",
-                "faible luminosité",
-                "faible lumière",
-                "moins de bruit",
-                "nuit"
+                "photo de nuit", "photos de nuit", "mode nuit", "faible luminosité",
+                "faible lumière", "moins de bruit", "nuit"
             ]):
                 return s.strip(), 1.0
-
         return "Aucune information précise sur les photos de nuit n'a été trouvée.", 0.3
-    
-    # Questions générales sur la qualité photo
-        # Questions générales sur la qualité photo
+
+    # B. Résistance à l'eau / IP68
     if any(word in question for word in [
-        "bon pour prendre les photos",
-        "bon pour les photos",
-        "bon en photo",
-        "bon pour prendre des photos",
-        "est il bon pour prendre les photos",
-        "est-il bon pour prendre les photos",
-        "est il bon en photo",
-        "est-il bon en photo",
-        "est ce qu'il est bon en photo",
-        "est-ce qu'il est bon en photo",
-        "bonne qualité photo",
-        "bonne qualité des photos",
-        "qualité des photos",
-        "qualite des photos",
-        "qualité photo",
-        "qualite photo",
-        "appareil photo performant",
-        "caméra performante"
+        "eau", "étanche", "etanche", "ip68", "résistant à l'eau", "resistant a l'eau",
+        "résistant à l’eau", "resistant a l’eau"
     ]):
         sentences = re.split(r'(?<=[.!?])\s+', paragraph)
-
-        # Chercher d'abord une phrase qui décrit réellement la qualité photo
         for s in sentences:
             s_lower = s.lower()
-
-            if any(word in s_lower for word in [
-                "qualité photo",
-                "qualité des photos",
-                "photographie",
-                "photo détaillée",
-                "photos détaillées",
-                "détails",
-                "stabilisation",
-                "amélioration ia",
-                "intelligence artificielle"
-            ]):
+            if (
+                "ip68" in s_lower
+                or "eau" in s_lower
+                or "résistant à l'eau" in s_lower
+                or "resistant a l'eau" in s_lower
+            ):
                 return s.strip(), 1.0
+        return "Aucune information précise sur la résistance à l'eau n'a été trouvée.", 0.3
 
-        # Deuxième possibilité : phrase parlant de caméra/photo
+    # C. Matériaux / Design / Aluminium
+    if any(word in question for word in [
+        "matériau", "matériaux", "materiau", "materiaux", "aluminium", "construction", "titane", "gorilla", "verre"
+    ]):
+        sentences = re.split(r'(?<=[.!?])\s+', paragraph)
         for s in sentences:
-            s_lower = s.lower()
-
-            if "caméra" in s_lower or "camera" in s_lower:
+            if any(m in s.lower() for m in ["aluminium", "titane", "gorilla", "verre", "cadre", "dos", "armor"]):
                 return s.strip(), 1.0
+        return "Aucune information précise sur les matériaux n'a été trouvée.", 0.3
 
-        return "Aucune information précise sur la qualité photo n'a été trouvée.", 0.3
-    # 4. Traitement spécifique des questions sur l'IA / CPU
-    # Questions sur les performances / processeur
-    # 4. Questions sur le processeur et les performances
-
+    # D. Processeur et performances
     performance_keywords = [
-    "processeur",
-    "cpu",
-    "puce",
-    "snapdragon",
-    "performance",
-    "performant",
-    "puissant",
-    "puissance",
-    "npu"]
-
+        "processeur", "cpu", "puce", "snapdragon", "performance", "performant", "puissant", "puissance", "npu"
+    ]
     if any(keyword in question for keyword in performance_keywords):
         processor_text = str(product["specifications_2"].iloc[0])
-        # Retourner directement l'information du processeur
         return processor_text, 1.0
-    # Questions générales sur Galaxy AI
+
+    # E. Questions générales sur la qualité photo
+    if any(word in question for word in [
+        "bon pour prendre les photos", "bon pour les photos", "bon en photo",
+        "bon pour prendre des photos", "est il bon pour prendre les photos",
+        "est-il bon pour prendre les photos", "est il bon en photo", "est-il bon en photo",
+        "est ce qu'il est bon en photo", "est-ce qu'il est bon en photo", "bonne qualité photo",
+        "bonne qualité des photos", "qualité des photos", "qualite des photos",
+        "qualité photo", "qualite photo", "appareil photo performant", "caméra performante"
+    ]):
+        sentences = re.split(r'(?<=[.!?])\s+', paragraph)
+        for s in sentences:
+            s_lower = s.lower()
+            if any(word in s_lower for word in [
+                "qualité photo", "qualité des photos", "photographie",
+                "photo détaillée", "photos détaillées", "détails",
+                "stabilisation", "amélioration ia", "intelligence artificielle"
+            ]):
+                return s.strip(), 1.0
+        for s in sentences:
+            s_lower = s.lower()
+            if "caméra" in s_lower or "camera" in s_lower:
+                return s.strip(), 1.0
+        return "Aucune information précise sur la qualité photo n'a été trouvée.", 0.3
+
+    # F. Questions générales sur Galaxy AI
     if re.search(ai_pattern, question):
         for s in re.split(r'(?<=[.!?])\s+', paragraph):
             s_lower = s.lower()
             if (
-            "galaxy ai facilite" in s_lower
-            or "retouche photo" in s_lower
-            or "creative studio" in s_lower
-            or "now nudge" in s_lower
-            or "now brief" in s_lower):
+                "galaxy ai facilite" in s_lower
+                or "retouche photo" in s_lower
+                or "creative studio" in s_lower
+                or "now nudge" in s_lower
+                or "now brief" in s_lower
+            ):
                 return s, 1.0
-    
-    # 5. Utiliser le mapping FAQ standard (gère le Wi-Fi, Bluetooth, etc.)
+
+    # ==========================================
+    # === UTILISER LE MAPPING FAQ GÉNÉRAL ======
+    # ==========================================
     for keyword, column in faq_mapping.items():
         if keyword in question:
             if keyword in ["wifi", "wi-fi"]:
-                paragraph = product["caractéristiques"].iloc[0]
                 for s in re.split(r'(?<=[.!?])\s+', paragraph):
                     if "wi-fi 7" in s.lower() or "wifi 7" in s.lower():
                         return "Le téléphone prend en charge le Wi-Fi 7.", 1.0
                 return "Aucune information précise sur le Wi-Fi n'a été trouvée.", 0.3
             if keyword in ["powershare", "power share"]:
-                paragraph = product["caractéristiques"].iloc[0]
-
                 for s in re.split(r'(?<=[.!?])\s+', paragraph):
                     if "powershare" in s.lower() or "power share" in s.lower():
                         return s, 1.0
-
                 return "Aucune information précise sur PowerShare n'a été trouvée.", 0.3
             if keyword == "bluetooth":
-                paragraph = product["caractéristiques"].iloc[0]
                 for s in re.split(r'(?<=[.!?])\s+', paragraph):
                     if "bluetooth 6.0" in s.lower():
                         return "Le téléphone utilise le Bluetooth 6.0.", 1.0
                 return "Aucune information précise sur le Bluetooth n'a été trouvée.", 0.3
-            if keyword in [
-                "résistant à l'eau",
-                "resistant a l'eau",
-                "résistant à l’eau",
-                "resistant a l’eau",
-                "étanche",
-                "etanche"]:
-                paragraph = product["caractéristiques"].iloc[0]
-
-                for s in re.split(r'(?<=[.!?])\s+', paragraph):
-                    s_lower = s.lower()
-
-                    if (
-                        "ip68" in s_lower
-                        or "eau" in s_lower
-                        or "résistant à l'eau" in s_lower
-                        or "resistant a l'eau" in s_lower
-                    ):
-                        return s, 1.0
-
-                return "Aucune information précise sur la résistance à l'eau n'a été trouvée.", 0.3
+            
             if column == "caractéristiques":
                 answer = extract_best_sentence(user_question, paragraph)
             elif column == "specifications_4":
@@ -498,11 +451,12 @@ def get_answer(user_question):
                 else:
                     answer = camera_text
             else:
-                # Pour specifications_5 (Wi-Fi, Bluetooth, 5G, SIM) ou specifications_2, etc.
                 answer = product[column].iloc[0]
             return answer, 1.0
 
-    # 6. Recherche par similarité (TF-IDF) en dernier recours
+    # ==========================================
+    # === RECHERCHE PAR SIMILARITÉ (TF-IDF) ====
+    # ==========================================
     best_question, score = search_question(user_question)
     
     if score < 0.35:
