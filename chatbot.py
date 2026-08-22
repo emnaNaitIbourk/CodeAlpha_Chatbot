@@ -421,28 +421,61 @@ def get_answer(user_question):
             ):
                 return s, 1.0
 
+  # ==========================================
+    # === UTILISER LE MAPPING FAQ GÉNÉRAL (MULTIPLE) ===
     # ==========================================
-    # === UTILISER LE MAPPING FAQ GÉNÉRAL ======
-    # ==========================================
+    collected_answers = []
+    checked_columns = set()
+
     for keyword, column in faq_mapping.items():
         if keyword in question:
-            if keyword in ["wifi", "wi-fi"]:
-                for s in re.split(r'(?<=[.!?])\s+', paragraph):
-                    if "wi-fi 7" in s.lower() or "wifi 7" in s.lower():
-                        return "Le téléphone prend en charge le Wi-Fi 7.", 1.0
-                return "Aucune information précise sur le Wi-Fi n'a été trouvée.", 0.3
-            if keyword in ["powershare", "power share"]:
-                for s in re.split(r'(?<=[.!?])\s+', paragraph):
-                    if "powershare" in s.lower() or "power share" in s.lower():
-                        return s, 1.0
-                return "Aucune information précise sur PowerShare n'a été trouvée.", 0.3
-            if keyword == "bluetooth":
-                for s in re.split(r'(?<=[.!?])\s+', paragraph):
-                    if "bluetooth 6.0" in s.lower():
-                        return "Le téléphone utilise le Bluetooth 6.0.", 1.0
-                return "Aucune information précise sur le Bluetooth n'a été trouvée.", 0.3
+            # Éviter de traiter deux fois la même colonne si plusieurs mots-clés pointent vers elle
+            if column in checked_columns and column != "caractéristiques":
+                continue
             
-            if column == "caractéristiques":
+            answer = None
+
+            if keyword in ["wifi", "wi-fi"]:
+                paragraph_feat = product["caractéristiques"].iloc[0]
+                for s in re.split(r'(?<=[.!?])\s+', paragraph_feat):
+                    if "wi-fi 7" in s.lower() or "wifi 7" in s.lower():
+                        answer = "Le téléphone prend en charge le Wi-Fi 7."
+                        break
+                if not answer:
+                    answer = "Aucune information précise sur le Wi-Fi n'a été trouvée."
+            
+            elif keyword in ["powershare", "power share"]:
+                paragraph_feat = product["caractéristiques"].iloc[0]
+                for s in re.split(r'(?<=[.!?])\s+', paragraph_feat):
+                    if "powershare" in s.lower() or "power share" in s.lower():
+                        answer = s.strip()
+                        break
+                if not answer:
+                    answer = "Aucune information précise sur PowerShare n'a été trouvée."
+            
+            elif keyword == "bluetooth":
+                paragraph_feat = product["caractéristiques"].iloc[0]
+                for s in re.split(r'(?<=[.!?])\s+', paragraph_feat):
+                    if "bluetooth 6.0" in s.lower():
+                        answer = "Le téléphone utilise le Bluetooth 6.0."
+                        break
+                if not answer:
+                    answer = "Aucune information précise sur le Bluetooth n'a été trouvée."
+            
+            elif keyword in [
+                "résistant à l'eau", "resistant a l'eau", "résistant à l’eau", 
+                "resistant a l’eau", "étanche", "etanche"
+            ]:
+                paragraph_feat = product["caractéristiques"].iloc[0]
+                for s in re.split(r'(?<=[.!?])\s+', paragraph_feat):
+                    s_lower = s.lower()
+                    if "ip68" in s_lower or "eau" in s_lower or "étanche" in s_lower:
+                        answer = s.strip()
+                        break
+                if not answer:
+                    answer = "Aucune information précise sur la résistance à l'eau n'a été trouvée."
+            
+            elif column == "caractéristiques":
                 answer = extract_best_sentence(user_question, paragraph)
             elif column == "specifications_4":
                 camera_text = product[column].iloc[0]
@@ -452,7 +485,14 @@ def get_answer(user_question):
                     answer = camera_text
             else:
                 answer = product[column].iloc[0]
-            return answer, 1.0
+
+            if answer and answer not in collected_answers:
+                collected_answers.append(answer)
+                checked_columns.add(column)
+
+    # Si on a trouvé plusieurs réponses via le mapping, on les combine proprement
+    if collected_answers:
+        return " ".join(collected_answers), 1.0
 
     # ==========================================
     # === RECHERCHE PAR SIMILARITÉ (TF-IDF) ====
