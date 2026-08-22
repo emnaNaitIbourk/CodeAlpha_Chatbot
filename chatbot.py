@@ -420,8 +420,7 @@ def get_answer(user_question):
                 or "now brief" in s_lower
             ):
                 return s, 1.0
-
-  # ==========================================
+    # ==========================================
     # === UTILISER LE MAPPING FAQ GÉNÉRAL (MULTIPLE) ===
     # ==========================================
     collected_answers = []
@@ -429,7 +428,7 @@ def get_answer(user_question):
 
     for keyword, column in faq_mapping.items():
         if keyword in question:
-            # Éviter de traiter deux fois la même colonne si plusieurs mots-clés pointent vers elle
+            # Éviter de traiter deux fois la même colonne
             if column in checked_columns and column != "caractéristiques":
                 continue
             
@@ -476,7 +475,19 @@ def get_answer(user_question):
                     answer = "Aucune information précise sur la résistance à l'eau n'a été trouvée."
             
             elif column == "caractéristiques":
-                answer = extract_best_sentence(user_question, paragraph)
+                # PROTECTION : Ne déclenche les caractéristiques générales que si l'utilisateur 
+                # a explicitement mentionné un mot en rapport avec la batterie, l'autonomie, etc., 
+                # ou si aucun autre mot-clé technique précis n'est visé.
+                battery_terms = ["batterie", "autonomie", "mah", "charge", "charger"]
+                is_battery_query = any(bt in question for bt in battery_terms)
+                
+                # Si le mot-clé actuel vient de la batterie, on l'autorise. Sinon, on ignore 
+                # pour éviter de polluer les questions Wi-Fi/Bluetooth.
+                if keyword in battery_terms or is_battery_query:
+                    answer = extract_best_sentence(user_question, paragraph)
+                else:
+                    continue
+            
             elif column == "specifications_4":
                 camera_text = product[column].iloc[0]
                 if "200 MP" in camera_text:
@@ -490,7 +501,6 @@ def get_answer(user_question):
                 collected_answers.append(answer)
                 checked_columns.add(column)
 
-    # Si on a trouvé plusieurs réponses via le mapping, on les combine proprement
     if collected_answers:
         return " ".join(collected_answers), 1.0
 
