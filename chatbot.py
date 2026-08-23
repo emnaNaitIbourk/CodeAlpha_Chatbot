@@ -296,7 +296,34 @@ def get_answer(user_question):
             0
         )
 
-    # 3. SÉCURITÉ : Liste des mots autorisés
+    # 3. GESTION PRIORITAIRE ET STRICTE DE LA CONNECTIVITÉ (ANTI-MÉLANGE)
+    # Placée ici pour s'arrêter immédiatement sans déclencher le reste du code
+    paragraph = product["caractéristiques"].iloc[0]
+    connectivite_answers = []
+    
+    if any(k in question for k in ["wifi", "wi-fi", "bluetooth", "powershare", "power share"]):
+        if any(k in question for k in ["wifi", "wi-fi"]):
+            for s in re.split(r'(?<=[.!?])\s+', paragraph):
+                if "wi-fi 7" in s.lower() or "wifi 7" in s.lower():
+                    connectivite_answers.append("Le téléphone prend en charge le Wi-Fi 7.")
+                    break
+                    
+        if "bluetooth" in question:
+            for s in re.split(r'(?<=[.!?])\s+', paragraph):
+                if "bluetooth 6.0" in s.lower():
+                    connectivite_answers.append("Le téléphone utilise le Bluetooth 6.0.")
+                    break
+                    
+        if any(k in question for k in ["powershare", "power share"]):
+            for s in re.split(r'(?<=[.!?])\s+', paragraph):
+                if "powershare" in s.lower() or "power share" in s.lower():
+                    connectivite_answers.append(s.strip())
+                    break
+                    
+        if connectivite_answers:
+            return " ".join(connectivite_answers), 1.0
+
+    # 4. SÉCURITÉ : Liste des mots autorisés
     allowed_words = [
         "samsung", "galaxy", "s26", "ultra", "téléphone", "portable", "prix",
         "coûte", "cout", "tarif", "écran", "camera", "caméra", "photo", "zoom",
@@ -325,8 +352,6 @@ def get_answer(user_question):
             "Désolé, je ne peux pas répondre à cette question. Je me spécialise uniquement dans les caractéristiques du Samsung Galaxy S26 Ultra.",
             0
         )
-
-    paragraph = product["caractéristiques"].iloc[0]
 
     # ==========================================
     # === PRIORITÉ ABSOLUE : CAS SPÉCIFIQUES ===
@@ -420,69 +445,24 @@ def get_answer(user_question):
                 or "now brief" in s_lower
             ):
                 return s, 1.0
+
     # ==========================================
-    # === UTILISER LE MAPPING FAQ GÉNÉRAL (MULTIPLE) ===
+    # === UTILISER LE MAPPING FAQ GÉNÉRAL ===
     # ==========================================
     collected_answers = []
     checked_columns = set()
 
     for keyword, column in faq_mapping.items():
         if keyword in question:
-            # Éviter de traiter deux fois la même colonne
             if column in checked_columns and column != "caractéristiques":
                 continue
             
             answer = None
 
-            if keyword in ["wifi", "wi-fi"]:
-                paragraph_feat = product["caractéristiques"].iloc[0]
-                for s in re.split(r'(?<=[.!?])\s+', paragraph_feat):
-                    if "wi-fi 7" in s.lower() or "wifi 7" in s.lower():
-                        answer = "Le téléphone prend en charge le Wi-Fi 7."
-                        break
-                if not answer:
-                    answer = "Aucune information précise sur le Wi-Fi n'a été trouvée."
-            
-            elif keyword in ["powershare", "power share"]:
-                paragraph_feat = product["caractéristiques"].iloc[0]
-                for s in re.split(r'(?<=[.!?])\s+', paragraph_feat):
-                    if "powershare" in s.lower() or "power share" in s.lower():
-                        answer = s.strip()
-                        break
-                if not answer:
-                    answer = "Aucune information précise sur PowerShare n'a été trouvée."
-            
-            elif keyword == "bluetooth":
-                paragraph_feat = product["caractéristiques"].iloc[0]
-                for s in re.split(r'(?<=[.!?])\s+', paragraph_feat):
-                    if "bluetooth 6.0" in s.lower():
-                        answer = "Le téléphone utilise le Bluetooth 6.0."
-                        break
-                if not answer:
-                    answer = "Aucune information précise sur le Bluetooth n'a été trouvée."
-            
-            elif keyword in [
-                "résistant à l'eau", "resistant a l'eau", "résistant à l’eau", 
-                "resistant a l’eau", "étanche", "etanche"
-            ]:
-                paragraph_feat = product["caractéristiques"].iloc[0]
-                for s in re.split(r'(?<=[.!?])\s+', paragraph_feat):
-                    s_lower = s.lower()
-                    if "ip68" in s_lower or "eau" in s_lower or "étanche" in s_lower:
-                        answer = s.strip()
-                        break
-                if not answer:
-                    answer = "Aucune information précise sur la résistance à l'eau n'a été trouvée."
-            
-            elif column == "caractéristiques":
-                # PROTECTION : Ne déclenche les caractéristiques générales que si l'utilisateur 
-                # a explicitement mentionné un mot en rapport avec la batterie, l'autonomie, etc., 
-                # ou si aucun autre mot-clé technique précis n'est visé.
+            if column == "caractéristiques":
                 battery_terms = ["batterie", "autonomie", "mah", "charge", "charger"]
                 is_battery_query = any(bt in question for bt in battery_terms)
                 
-                # Si le mot-clé actuel vient de la batterie, on l'autorise. Sinon, on ignore 
-                # pour éviter de polluer les questions Wi-Fi/Bluetooth.
                 if keyword in battery_terms or is_battery_query:
                     answer = extract_best_sentence(user_question, paragraph)
                 else:
