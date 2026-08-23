@@ -124,6 +124,8 @@ faq_mapping = {
     "où trouver": "caractéristiques",
     "ou trouver": "caractéristiques",
     "disponible à l'achat": "caractéristiques",
+    "now brief": "caractéristiques",
+    "now nudge": "caractéristiques",
 }
 
 faq = pd.read_csv(
@@ -294,7 +296,6 @@ def get_answer(user_question):
         )
 
     # 3. GESTION PRIORITAIRE ET STRICTE DE LA CONNECTIVITÉ (ANTI-MÉLANGE)
-    # Placée ici pour s'arrêter immédiatement sans déclencher le reste du code
     paragraph = product["caractéristiques"].iloc[0]
     connectivite_answers = []
     
@@ -325,7 +326,7 @@ def get_answer(user_question):
         "samsung", "galaxy", "s26", "ultra", "téléphone", "portable", "prix",
         "coûte", "cout", "tarif", "écran", "camera", "caméra", "photo", "zoom",
         "batterie", "charge", "garantie", "couleur", "couleurs", "noir", "blanc",
-        "bleu", "violet","powershare", "power share", "eau", "étanche", "etanche",
+        "bleu", "violet", "powershare", "power share", "eau", "étanche", "etanche",
         "résistant", "resistant", "design", "matériau", "materiau", "matériaux", "materiaux",
         "aluminium", "galaxy ai", "intelligence", "artificielle", 
         "now brief", "now nudge", "processeur", "fiche", "rafraîchissement",
@@ -398,50 +399,17 @@ def get_answer(user_question):
                 return s.strip(), 1.0
         return "Aucune information précise sur les matériaux n'a été trouvée.", 0.3
 
-    # D. Processeur et performances
+    # D. Processeur et performances (CORRIGÉ POUR ISOLER LA PHRASE)
     performance_keywords = [
         "processeur", "cpu", "puce", "snapdragon", "performance", "performant", "puissant", "puissance", "npu"
     ]
     if any(keyword in question for keyword in performance_keywords):
-        processor_text = str(product["specifications_2"].iloc[0])
-        return processor_text, 1.0
-
-    # E. Questions générales sur la qualité photo
-    if any(word in question for word in [
-        "bon pour prendre les photos", "bon pour les photos", "bon en photo",
-        "bon pour prendre des photos", "est il bon pour prendre les photos",
-        "est-il bon pour prendre les photos", "est il bon en photo", "est-il bon en photo",
-        "est ce qu'il est bon en photo", "est-ce qu'il est bon en photo", "bonne qualité photo",
-        "bonne qualité des photos", "qualité des photos", "qualite des photos",
-        "qualité photo", "qualite photo", "appareil photo performant", "caméra performante"
-    ]):
-        sentences = re.split(r'(?<=[.!?])\s+', paragraph)
+        proc_paragraph = str(product["specifications_2"].iloc[0])
+        sentences = re.split(r'(?<=[.!?])\s+', proc_paragraph)
         for s in sentences:
-            s_lower = s.lower()
-            if any(word in s_lower for word in [
-                "qualité photo", "qualité des photos", "photographie",
-                "photo détaillée", "photos détaillées", "détails",
-                "stabilisation", "amélioration ia", "intelligence artificielle"
-            ]):
+            if any(p in s.lower() for p in ["snapdragon", "processeur", "puce", "cpu"]):
                 return s.strip(), 1.0
-        for s in sentences:
-            s_lower = s.lower()
-            if "caméra" in s_lower or "camera" in s_lower:
-                return s.strip(), 1.0
-        return "Aucune information précise sur la qualité photo n'a été trouvée.", 0.3
-
-    # F. Questions générales sur Galaxy AI
-    if re.search(ai_pattern, question):
-        for s in re.split(r'(?<=[.!?])\s+', paragraph):
-            s_lower = s.lower()
-            if (
-                "galaxy ai facilite" in s_lower
-                or "retouche photo" in s_lower
-                or "creative studio" in s_lower
-                or "now nudge" in s_lower
-                or "now brief" in s_lower
-            ):
-                return s, 1.0
+        return proc_paragraph, 1.0
 
     # ==========================================
     # === UTILISER LE MAPPING FAQ GÉNÉRAL ===
@@ -462,6 +430,20 @@ def get_answer(user_question):
                 
                 if keyword in battery_terms or is_battery_query:
                     answer = extract_best_sentence(user_question, paragraph)
+                elif keyword in ["now brief", "now nudge"]:
+                    for s in re.split(r'(?<=[.!?])\s+', paragraph):
+                        if keyword in s.lower():
+                            answer = s.strip()
+                            break
+                    if not answer:
+                        answer = extract_best_sentence(user_question, paragraph)
+                elif keyword in ["commander", "acheter", "achat", "précommande", "precommande"]:
+                    for s in re.split(r'(?<=[.!?])\s+', paragraph):
+                        if any(k in s.lower() for k in ["commander", "acheter", "achat", "précommande", "precommande"]):
+                            answer = s.strip()
+                            break
+                    if not answer:
+                        answer = extract_best_sentence(user_question, paragraph)
                 else:
                     continue
             
