@@ -399,17 +399,13 @@ def get_answer(user_question):
                 return s.strip(), 1.0
         return "Aucune information précise sur les matériaux n'a été trouvée.", 0.3
 
-    # D. Processeur et performances (CORRIGÉ POUR ISOLER LA PHRASE)
+    # D. Processeur et performances (CORRIGÉ)
     performance_keywords = [
         "processeur", "cpu", "puce", "snapdragon", "performance", "performant", "puissant", "puissance", "npu"
     ]
     if any(keyword in question for keyword in performance_keywords):
-        proc_paragraph = str(product["specifications_2"].iloc[0])
-        sentences = re.split(r'(?<=[.!?])\s+', proc_paragraph)
-        for s in sentences:
-            if any(p in s.lower() for p in ["snapdragon", "processeur", "puce", "cpu"]):
-                return s.strip(), 1.0
-        return proc_paragraph, 1.0
+        proc_text = str(product["specifications_2"].iloc[0])
+        return proc_text, 1.0
 
     # ==========================================
     # === UTILISER LE MAPPING FAQ GÉNÉRAL ===
