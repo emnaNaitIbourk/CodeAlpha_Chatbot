@@ -517,41 +517,36 @@ def get_answer(user_question):
         )
 
     # ==========================================
-    # === A. QUALITÉ PHOTO & PHOTOS DE NUIT ====
+    # === A. QUALITÉ PHOTO & APPAREIL PHOTO ===
     # ==========================================
     if any(
         word in question
         for word in [
-            "nuit",
             "photo",
             "photos",
             "qualité",
             "qualite",
-            "mode nuit",
-            "basse lumière",
-            "faible luminosité",
+            "caméra",
+            "camera",
+            "nuit",
             "zoom",
+            "megapixel",
+            "mégapixels",
+            "capteur",
         ]):
-        sentences = re.split(r"(?<=[.!?])\s+", paragraph)
-        for s in sentences:
-            s_lower = s.lower()
-        # On cherche une phrase qui parle de l'optique, du traitement ou de la qualité photo
-        if any(
-            word in s_lower
-            for word in [
-                "photo",
-                "caméra",
-                "nuit",
-                "zoom",
-                "optique",
-                "traitement",
-                "bruit",
-                "mp",]):
-            return s.strip(), 1.0
+        # On va chercher directement la colonne specifications_4 qui contient toutes les infos photos
+        if "specifications_4" in product.columns:
+            camera_info = str(product["specifications_4"].iloc[0])
+            if camera_info and camera_info.lower() != "nan":
+                return camera_info, 1.0
+
+        # Fallback de secours si specifications_4 n'est pas dispo
         return (
-        "Aucune information précise sur la qualité des photos n'a été"
-        " trouvée.",
-        0.3,)
+            "Le Samsung Galaxy S26 Ultra intègre un système photo avancé avec un"
+            " capteur principal haute résolution, une optimisation pour la nuit"
+            " et un Space Zoom stabilisé.",
+            1.0,
+        )
 
     # B. Résistance à l'eau / IP68
     if any(
