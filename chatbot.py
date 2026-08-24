@@ -517,7 +517,7 @@ def get_answer(user_question):
         )
 
     # ==========================================
-    # === A. QUALITÉ PHOTO & APPAREIL PHOTO ===
+    # === A. GESTION INTELLIGENTE DES PHOTOS ===
     # ==========================================
     if any(
         word in question
@@ -528,23 +528,38 @@ def get_answer(user_question):
             "qualite",
             "caméra",
             "camera",
-            "nuit",
-            "zoom",
             "megapixel",
             "mégapixels",
             "capteur",
-        ]):
-        # On va chercher directement la colonne specifications_4 qui contient toutes les infos photos
-        if "specifications_4" in product.columns:
-            camera_info = str(product["specifications_4"].iloc[0])
-            if camera_info and camera_info.lower() != "nan":
-                return camera_info, 1.0
+        ]
+    ):
+        sentences = re.split(r"(?<=[.!?])\s+", paragraph)
 
-        # Fallback de secours si specifications_4 n'est pas dispo
+        # 1. Si la question concerne spécifiquement la NUIT
+        if any(w in question for w in ["nuit", "nocturne", "basse lumière", "sombre"]):
+            for s in sentences:
+                if any(
+                    w in s.lower()
+                    for w in ["nuit", "optique", "traitement", "bruit"]
+                ):
+                    return s.strip(), 1.0
+
+        # 2. Si la question concerne spécifiquement le ZOOM
+        if any(w in question for w in ["zoom", "loin", "éloigné", "eloigne"]):
+            for s in sentences:
+                if "zoom" in s.lower():
+                    return s.strip(), 1.0
+
+        # 3. Si la question concerne la QUALITÉ GÉNÉRALE ou les MÉGAPIXELS
+        # On regarde si on a specifications_4 sous la main pour les capteurs
+        if "specifications_4" in product.columns:
+            camera_text = str(product["specifications_4"].iloc[0])
+            if camera_text and camera_text.lower() != "nan":
+                return camera_text, 1.0
+
         return (
-            "Le Samsung Galaxy S26 Ultra intègre un système photo avancé avec un"
-            " capteur principal haute résolution, une optimisation pour la nuit"
-            " et un Space Zoom stabilisé.",
+            "Le Samsung Galaxy S26 Ultra dispose d'un système photo avancé ultra"
+            " performant.",
             1.0,
         )
 
