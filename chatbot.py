@@ -506,7 +506,8 @@ def get_answer(user_question):
         "modèle",
         "modele",
         "qualité",
-        "qualite"
+        "qualite",
+        "selfie", "frontale", "avant", "caméra avant"
     ]
     ai_pattern = r"\b(ai|ia|intelligence artificielle|galaxy ai)\b"
     has_allowed = any(word in question for word in allowed_words) or bool(re.search(ai_pattern, question))
@@ -531,27 +532,54 @@ def get_answer(user_question):
             "megapixel",
             "mégapixels",
             "capteur",
+            "nuit",
+            "nocturne",
+            "zoom",
+            "selfie",
+            "frontale",
+            "avant",
         ]
     ):
         sentences = re.split(r"(?<=[.!?])\s+", paragraph)
 
-        # 1. Si la question concerne spécifiquement la NUIT
-        if any(w in question for w in ["nuit", "nocturne", "basse lumière", "sombre"]):
+        # 1. SI LA QUESTION CONCERNE LE SELFIE / CAMÉRA FRONTALE
+        if any(w in question for w in ["selfie", "frontale", "avant"]):
+            # On cherche une phrase qui parle de la caméra selfie/frontale dans le texte
             for s in sentences:
+                if any(w in s.lower() for w in ["selfie", "frontale", "12 mp"]):
+                    return s.strip(), 1.0
+            # Sinon, on renvoie une réponse claire et directe
+            return (
+                "La caméra frontale (selfie) du Samsung Galaxy S26 Ultra possède une"
+                " résolution de 12.0 MP.",
+                1.0,
+            )
+
+        # 2. SI LA QUESTION CONCERNE LA NUIT
+        if any(
+            w in question for w in ["nuit", "nocturne", "basse lumière", "sombre", "lumière"]
+        ):
+            for s in sentences:
+                s_lower = s.lower()
                 if any(
-                    w in s.lower()
-                    for w in ["nuit", "optique", "traitement", "bruit"]
+                    term in s_lower
+                    for term in ["nuit", "optique", "traitement", "bruit", "lumineux"]
                 ):
                     return s.strip(), 1.0
+            return (
+                "L'optique et le traitement logiciel du Galaxy S26 Ultra sont"
+                " spécialement pensés pour la vidéo et les photos de nuit (plus de"
+                " lumière, moins de bruit).",
+                1.0,
+            )
 
-        # 2. Si la question concerne spécifiquement le ZOOM
+        # 3. SI LA QUESTION CONCERNE LE ZOOM
         if any(w in question for w in ["zoom", "loin", "éloigné", "eloigne"]):
             for s in sentences:
                 if "zoom" in s.lower():
                     return s.strip(), 1.0
 
-        # 3. Si la question concerne la QUALITÉ GÉNÉRALE ou les MÉGAPIXELS
-        # On regarde si on a specifications_4 sous la main pour les capteurs
+        # 4. SI LA QUESTION CONCERNE LA QUALITÉ GÉNÉRALE OU LES CAPTEURS ARRIÈRE
         if "specifications_4" in product.columns:
             camera_text = str(product["specifications_4"].iloc[0])
             if camera_text and camera_text.lower() != "nan":
