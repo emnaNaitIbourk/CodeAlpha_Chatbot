@@ -346,19 +346,26 @@ def get_answer(user_question):
   # ==========================================================
   # === PRIORITÉ ABSOLUE 2 : GALAXY AI / INTELLIGENCE ARTIFICIELLE ===
   # ==========================================================
-  ai_keywords = ["ai", "ia", "galaxy ai", "intelligence artificielle"]
-  if any(kw in question for kw in ai_keywords):
+  ai_pattern_check = r"\b(ai|ia|galaxy ai|intelligence artificielle)\b"
+  if re.search(ai_pattern_check, question):
     sentences = re.split(r"(?<=[.!?])\s+", paragraph)
-    ai_sentences = [
-        s.strip()
-        for s in sentences
-        if any(
-            k in s.lower()
-            for k in ["ai", "ia", "galaxy ai", "intelligence", "assistant"]
-        )
-    ]
-    if ai_sentences:
-      return " ".join(ai_sentences), 1.0
+    # On cherche uniquement la phrase qui parle de la retouche photo ou des fonctions Galaxy AI
+    for s in sentences:
+      s_lower = s.lower()
+      if (
+          "galaxy ai" in s_lower
+          or "retouche" in s_lower
+          or "creative studio" in s_lower
+          or "now nudge" in s_lower
+      ):
+        return s.strip(), 1.0
+
+    # Fallback si aucune phrase spécifique n'est trouvée
+    return (
+        "Galaxy AI facilite la retouche photo en langage naturel et introduit"
+        " des assistants intelligents.",
+        1.0,
+    )
 
   # 3. GESTION PRIORITAIRE ET STRICTE DE LA CONNECTIVITÉ (ANTI-MÉLANGE)
   connectivite_answers = []
