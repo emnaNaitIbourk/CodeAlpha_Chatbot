@@ -514,42 +514,42 @@ def get_answer(user_question):
             0,
         )
 
-    # A. Photos de nuit / mode nocturne
+    # ==========================================
+    # === A. QUALITÉ PHOTO & PHOTOS DE NUIT ====
+    # ==========================================
     if any(
         word in question
         for word in [
             "nuit",
-            "photo de nuit",
-            "photos de nuit",
-            "comment sont les photos de nuit",
-            "qualité des photos de nuit",
-            "qualite des photos de nuit",
-            "photos nocturnes",
-            "photographie de nuit",
+            "photo",
+            "photos",
+            "qualité",
+            "qualite",
+            "mode nuit",
             "basse lumière",
             "faible luminosité",
-            "faible lumière",
-            "mode nuit",
-            "mode nocturne",
-        ]
-    ):
+            "zoom",
+        ]):
         sentences = re.split(r"(?<=[.!?])\s+", paragraph)
         for s in sentences:
             s_lower = s.lower()
-            if any(
-                word in s_lower
-                for word in [
-                    "photo de nuit",
-                    "photos de nuit",
-                    "mode nuit",
-                    "faible luminosité",
-                    "faible lumière",
-                    "moins de bruit",
-                    "nuit",
-                ]
-            ):
-                return s.strip(), 1.0
-        return "Aucune information précise sur les photos de nuit n'a été trouvée.", 0.3
+        # On cherche une phrase qui parle de l'optique, du traitement ou de la qualité photo
+        if any(
+            word in s_lower
+            for word in [
+                "photo",
+                "caméra",
+                "nuit",
+                "zoom",
+                "optique",
+                "traitement",
+                "bruit",
+                "mp",]):
+            return s.strip(), 1.0
+        return (
+        "Aucune information précise sur la qualité des photos n'a été"
+        " trouvée.",
+        0.3,)
 
     # B. Résistance à l'eau / IP68
     if any(
