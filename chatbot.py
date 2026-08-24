@@ -345,20 +345,35 @@ def get_answer(user_question):
     ai_pattern_check = r"\b(ai|ia|galaxy ai|intelligence artificielle)\b"
     if re.search(ai_pattern_check, question):
         sentences = re.split(r"(?<=[.!?])\s+", paragraph)
-        for s in sentences:
-            s_lower = s.lower()
-            if (
-                "galaxy ai" in s_lower
-                or "retouche" in s_lower
-                or "creative studio" in s_lower
-                or "now nudge" in s_lower
-            ):
-                return s.strip(), 1.0
+    # 1. On cherche d'abord une phrase qui parle spécifiquement des fonctionnalités (retouche, stickers, etc.)
+    for s in sentences:
+        s_lower = s.lower()
+        if any(
+            kw in s_lower
+            for kw in [
+            "retouche",
+            "creative studio",
+            "stickers",
+            "now nudge",
+            "now brief",]):
+            return s.strip(), 1.0
+    # 2. Sinon, si la question demande globalement les fonctionnalités ou ce que fait l'IA
+    for s in sentences:
+        s_lower = s.lower()
+        if "galaxy ai" in s_lower and (
+            "facilite" in s_lower or "fonction" in s_lower or "assistant" in s_lower):
+            return s.strip(), 1.0
+    # 3. Dernier recours pour l'IA (le NPU / performances)
+    for s in sentences:
+        s_lower = s.lower()
+        if "npu" in s_lower or "traitement" in s_lower:
+            return s.strip(), 1.0
 
-        return (
-            "Galaxy AI facilite la retouche photo en langage naturel et introduit des assistants intelligents.",
-            1.0,
-        )
+    return (
+        "Galaxy AI intègre des outils de retouche photo et des assistants"
+        " intelligents.",
+        1.0,
+    )
 
     # 3. GESTION PRIORITAIRE ET STRICTE DE LA CONNECTIVITÉ
     connectivite_answers = []
