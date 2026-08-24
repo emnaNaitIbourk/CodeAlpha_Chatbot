@@ -505,6 +505,8 @@ def get_answer(user_question):
         "nouvelle",
         "modèle",
         "modele",
+        "qualité",
+        "qualite"
     ]
     ai_pattern = r"\b(ai|ia|intelligence artificielle|galaxy ai)\b"
     has_allowed = any(word in question for word in allowed_words) or bool(re.search(ai_pattern, question))
