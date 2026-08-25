@@ -551,7 +551,7 @@ def get_answer(user_question):
             # Sinon, on renvoie une réponse claire et directe
             return (
                 "La caméra frontale (selfie) du Samsung Galaxy S26 Ultra possède une"
-                " résolution de 12.0 MP.",
+                " résolution de 12.0 MP .",
                 1.0,
             )
 
