@@ -15,9 +15,6 @@ faq_mapping = {
     "snapdragon": "specifications_2",
     "performance": "specifications_2",
     "performant": "specifications_2",
-    "gaming": "specifications_2",
-    "jeu": "specifications_2",
-    "jeux": "specifications_2",
     "écran": "specifications_3",
     "ecran": "specifications_3",
     "amoled": "specifications_3",
@@ -47,9 +44,6 @@ faq_mapping = {
     "reseau": "specifications_5",
     "connectivité": "specifications_5",
     "connectivite": "specifications_5",
-    "wifi": "specifications_5",
-    "wi-fi": "specifications_5",
-    "bluetooth": "specifications_5",
     "batterie": "caractéristiques",
     "autonomie": "caractéristiques",
     "mah": "caractéristiques",
@@ -57,8 +51,7 @@ faq_mapping = {
     "charger": "caractéristiques",
     "wireless": "caractéristiques",
     "powershare": "caractéristiques",
-    "now brief": "caractéristiques",
-    "now nudge": "caractéristiques",
+    "power share": "caractéristiques",
     "couleur": "caractéristiques",
     "couleurs": "caractéristiques",
     "noir": "caractéristiques",
@@ -79,18 +72,13 @@ faq_mapping = {
     "précommande": "caractéristiques",
     "precommande": "caractéristiques",
     "commander": "caractéristiques",
-    "résolution caméra": "specifications_4",
-    "resolution camera": "specifications_4",
-    "200 mp": "caractéristiques",
-    "mégapixel": "specifications_4",
-    "mégapixels": "specifications_4",
-    "megapixels": "specifications_4",
-    "capteur": "specifications_4",
-    "capteur principal": "specifications_4",
-    "caméra arrière": "specifications_4",
-    "camera arriere": "specifications_4",
-    "arrière": "specifications_4",
-    "arriere": "specifications_4",
+    "acheter": "caractéristiques",
+    "achat": "caractéristiques",
+    "où acheter": "caractéristiques",
+    "ou acheter": "caractéristiques",
+    "gaming": "caractéristiques",
+    "jeu": "caractéristiques",
+    "jeux": "caractéristiques",
     "source": "source",
     "lien": "source",
     "site": "source",
@@ -158,19 +146,25 @@ def extract_best_sentence(user_question, text):
     sentences = [s.strip() for s in sentences if s.strip()]
     question = user_question.lower()
    
-    if any(word in question for word in ["batterie", "autonomie", "mah", "durée", "duree", "charge", "charger"]):
+    # 1. Gestion spécifique des matériaux
+    if any(word in question for word in ["matériau", "matériaux", "materiau", "materiaux", "aluminium", "construction", "titane", "gorilla", "verre"]):
         for s in sentences:
-            if any(m in s.lower() for m in ["batterie", "autonomie", "mah", "charge", "heures", "heure", "5000", "5 000"]):
+            s_lower = s.lower()
+            if any(m in s_lower for m in ["aluminium", "titane", "gorilla", "verre", "armor", "châssis", "cadre", "dos"]):
+                if "mm" not in s_lower and "g" not in s_lower: # Éviter de renvoyer l'épaisseur/poids par erreur
+                    return s
+
+    # 2. Gestion de la batterie / autonomie
+    if any(word in question for word in ["batterie", "autonomie", "mah", "charge", "charger"]):
+        for s in sentences:
+            if any(m in s.lower() for m in ["batterie", "5000", "5 000", "mah", "charge", "autonomie", "heures"]):
                 return s
 
-    if any(word in question for word in ["matériau", "matériaux", "materiau", "materiaux", "aluminium", "construction", "design"]):
+    # 3. Gestion de l'achat / commande
+    if any(word in question for word in ["acheter", "achat", "commander", "précommande", "precommande", "trouver"]):
         for s in sentences:
-            if any(m in s.lower() for m in ["aluminium", "gorilla", "verre", "titane", "cadre", "dos", "armor", "design", "châssis"]):
-                return s
-
-    if any(word in question for word in ["nuit", "sombre"]):
-        for s in sentences:
-            if "nuit" in s.lower():
+            s_lower = s.lower()
+            if any(w in s_lower for w in ["acheter", "achat", "commander", "précommande", "disponible", "tunisie", "prix"]):
                 return s
 
     processed_sentences = [preprocess(s) for s in sentences]
@@ -185,7 +179,10 @@ def extract_best_sentence(user_question, text):
     return sentences[best_index]
 
 def get_answer(user_question):
-    question = user_question.lower()
+    if not user_question or not user_question.strip():
+        return "Veuillez poser une question sur le Samsung Galaxy S26 Ultra.", 0.0
+
+    question = user_question.lower().strip()
 
     goodbye_words = ["au revoir", "bye", "salut", "à bientôt", "a bientot", "a+", "ciao", "merci"]
     if any(word in question for word in goodbye_words):
@@ -197,10 +194,7 @@ def get_answer(user_question):
         "nokia", "motorola"
     ]
     if any(prod in question for prod in other_products):
-        return (
-            "Désolé, je ne peux pas répondre à cette question. Je me spécialise uniquement dans les caractéristiques du Samsung Galaxy S26 Ultra.",
-            0
-        )
+        return "Désolé, je ne peux pas répondre à cette question. Je me spécialise uniquement dans les caractéristiques du Samsung Galaxy S26 Ultra.", 0.0
 
     allowed_words = [
         "samsung", "galaxy", "s26", "ultra", "téléphone", "portable", "prix",
@@ -210,74 +204,38 @@ def get_answer(user_question):
         "aluminium", "galaxy ai", "intelligence", "artificielle", "ia", "ai", 
         "now brief", "now nudge", "processeur", "fiche", "rafraîchissement",
         "rafraichissement", "hz", "macro", "mégapixels", "megapixels", "mégapixel",
-        "megapixel", "mega pixel", "mega pixels", "ip68", "capteur", "arrière", 
-        "poussiére", "poussière", "arriere", "connectivité", "connectivite",
-        "wifi", "wi-fi", "bluetooth", "5g", "double sim", "sim", "source", "officiel",
-        "officielle", "lien", "site", "performance", "performant", "snapdragon",
-        "puce", "cpu", "nuit", "photo de nuit", "mode nuit", "autonomie", 
-        "précommande", "precommander", "commander", "temps", "météo", "meteo",
-        "gaming", "jeu", "jeux"
+        "megapixel", "ip68", "capteur", "arrière", "poussiére", "poussière", "arriere", 
+        "connectivité", "connectivite", "wifi", "wi-fi", "bluetooth", "5g", "double sim", 
+        "sim", "source", "officiel", "officielle", "lien", "site", "performance", 
+        "performant", "snapdragon", "puce", "cpu", "nuit", "photo de nuit", "mode nuit", 
+        "autonomie", "précommande", "precommander", "commander", "acheter", "achat", 
+        "temps", "météo", "meteo", "gaming", "jeu", "jeux", "titane", "gorilla", "verre"
     ]
 
     ai_pattern = r'\b(ai|ia|intelligence artificielle|galaxy ai)\b'
-
     has_allowed = any(word in question for word in allowed_words) or bool(re.search(ai_pattern, question))
     
     if not has_allowed:
-        return (
-            "Désolé, je ne peux pas répondre à cette question. Je me spécialise uniquement dans les caractéristiques du Samsung Galaxy S26 Ultra.",
-            0
-        )
+        return "Désolé, je ne peux pas répondre à cette question. Je me spécialise uniquement dans les caractéristiques du Samsung Galaxy S26 Ultra.", 0.0
 
-    paragraph = product["caractéristiques"].iloc[0]
+    paragraph = str(product["caractéristiques"].iloc[0])
 
-    if re.search(ai_pattern, question):
-        if any(w in question for w in ["npu", "cpu", "performance", "performant", "processeur", "gaming", "jeu", "jeux"]):
-            for s in re.split(r'(?<=[.!?])\s+', paragraph):
-                if any(term in s.lower() for term in ["npu", "processeur", "snapdragon", "performance"]):
-                    return s, 1.0
-        for s in re.split(r'(?<=[.!?])\s+', paragraph):
-            if "galaxy ai" in s.lower() or "intelligence" in s.lower():
-                return s, 1.0
+    # Gestion spécifique du processeur (sans bloquer le mot gaming s'il demande les performances globales)
+    performance_keywords = ["processeur", "cpu", "puce", "snapdragon"]
+    if any(keyword in question for keyword in performance_keywords) and not any(w in question for w in ["gaming", "jeu", "jeux"]):
+        return str(product["specifications_2"].iloc[0]), 1.0
 
-    for keyword, column in faq_mapping.items():
-        if keyword in question:
-            if column == "caractéristiques":
-                answer = extract_best_sentence(user_question, paragraph)
-            elif column == "specifications_4":
-                camera_text = product[column].iloc[0]
-                if "200 MP" in camera_text and not any(w in question for w in ["nuit", "zoom"]):
-                    answer = "La caméra principale arrière possède une résolution de 200 MP."
-                else:
-                    answer = camera_text
-            elif column == "specifications_5":
-                net_text = product[column].iloc[0]
-                if "wifi" in question or "wi-fi" in question:
-                    for s in re.split(r'[,.\n]', net_text):
-                        if "wifi" in s.lower() or "wi-fi" in s.lower():
-                            answer = s.strip()
-                            break
-                    else:
-                        answer = net_text
-                elif "bluetooth" in question:
-                    for s in re.split(r'[,.\n]', net_text):
-                        if "bluetooth" in s.lower():
-                            answer = s.strip()
-                            break
-                    else:
-                        answer = net_text
-                else:
-                    answer = net_text
-            else:
-                answer = product[column].iloc[0]
-            return answer, 1.0
+    # Gestion de l'achat / commande
+    if any(w in question for w in ["acheter", "achat", "commander", "précommande", "precommande", "où acheter", "ou acheter"]):
+        return extract_best_sentence(user_question, paragraph), 1.0
+
+    # Gestion des matériaux
+    if any(w in question for w in ["matériau", "matériaux", "materiau", "materiaux", "aluminium", "titane", "gorilla", "verre", "construction"]):
+        return extract_best_sentence(user_question, paragraph), 1.0
 
     best_question, score = search_question(user_question)
     
-    if score < 0.2:
-        return (
-            "Je n'ai pas trouvé d'information précise concernant votre demande sur le Samsung Galaxy S26 Ultra.",
-            score
-        )
+    if score < 0.30:
+        return "Je n'ai pas trouvé d'information précise concernant votre demande sur le Samsung Galaxy S26 Ultra.", score
         
     return extract_best_sentence(user_question, paragraph), score
