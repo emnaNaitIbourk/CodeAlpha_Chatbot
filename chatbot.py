@@ -307,24 +307,24 @@ def get_answer(user_question):
     if not has_allowed:
         return ("Désolé, je ne peux pas répondre à cette question. Je me spécialise uniquement dans les caractéristiques du Samsung Galaxy S26 Ultra.", 0)
 
-    # === A. GESTION INTELLIGENTE DES PHOTOS ===
+   # === A. GESTION INTELLIGENTE DES PHOTOS ===
     if any(word in question for word in ["photo", "photos", "qualité", "qualite", "caméra", "camera", "megapixel", "mégapixels", "capteur", "nuit", "nocturne", "zoom", "selfie", "frontale", "avant"]):
         sentences = re.split(r"(?<=[.!?])\s+", paragraph)
 
-        # 1. SI LA QUESTION CONCERNE LE SELFIE / CAMÉRA FRONTALE
+        # 1. SI LA QUESTION CONCERNE LA NUIT (Priorité haute pour la nuit)
+        if any(w in question for w in ["nuit", "nocturne", "basse lumière", "sombre", "lumière"]):
+            for s in sentences:
+                s_lower = s.lower()
+                if any(term in s_lower for term in ["nuit", "optique", "traitement", "bruit", "lumineux", "sombre"]):
+                    return s.strip(), 1.0
+            return ("L'optique et le traitement logiciel du Galaxy S26 Ultra sont spécialement pensés pour la vidéo et les photos de nuit.", 1.0)
+
+        # 2. SI LA QUESTION CONCERNE LE SELFIE / CAMÉRA FRONTALE
         if any(w in question for w in ["selfie", "frontale", "avant"]):
             for s in sentences:
                 if any(w in s.lower() for w in ["selfie", "frontale", "12 mp"]):
                     return s.strip(), 1.0
             return ("La caméra frontale (selfie) du Samsung Galaxy S26 Ultra possède une résolution de 12.0 MP.", 1.0)
-
-        # 2. SI LA QUESTION CONCERNE LA NUIT
-        if any(w in question for w in ["nuit", "nocturne", "basse lumière", "sombre", "lumière"]):
-            for s in sentences:
-                s_lower = s.lower()
-                if any(term in s_lower for term in ["nuit", "optique", "traitement", "bruit", "lumineux"]):
-                    return s.strip(), 1.0
-            return ("L'optique et le traitement logiciel du Galaxy S26 Ultra sont spécialement pensés pour la vidéo et les photos de nuit (plus de lumière, moins de bruit).", 1.0)
 
         # 3. SI LA QUESTION CONCERNE LE ZOOM
         if any(w in question for w in ["zoom", "loin", "éloigné", "eloigne"]):
