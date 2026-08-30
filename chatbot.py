@@ -307,7 +307,7 @@ def get_answer(user_question):
     if not has_allowed:
         return ("Désolé, je ne peux pas répondre à cette question. Je me spécialise uniquement dans les caractéristiques du Samsung Galaxy S26 Ultra.", 0)
 
-   # === A. GESTION INTELLIGENTE DES PHOTOS ===
+    # === A. GESTION INTELLIGENTE DES PHOTOS ===
     if any(word in question for word in ["photo", "photos", "qualité", "qualite", "caméra", "camera", "megapixel", "mégapixels", "capteur", "nuit", "nocturne", "zoom", "selfie", "frontale", "avant"]):
         sentences = re.split(r"(?<=[.!?])\s+", paragraph)
 
