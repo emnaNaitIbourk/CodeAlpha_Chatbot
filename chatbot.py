@@ -384,15 +384,15 @@ def get_answer(user_question):
                         break
                 if not answer:
                     answer = extract_best_sentence(user_question, paragraph)
-            # Gestion des couleurs dans le paragraphe caractéristiques
+            # Gestion précise des couleurs (on prend juste la phrase concernée)
             elif keyword in ["couleur", "couleurs", "noir", "blanc", "bleu", "violet"]:
                 for s in re.split(r"(?<=[.!?])\s+", paragraph):
                     s_lower = s.lower()
-                    if any(c in s_lower for c in ["couleur", "noir", "blanc", "bleu", "violet", "disponible"]):
+                    if any(c in s_lower for c in ["couleur", "disponible en"]):
                         answer = s.strip()
                         break
                 if not answer:
-                    answer = extract_best_sentence(user_question, paragraph)
+                    answer = "Il est disponible en plusieurs coloris : noir, blanc, violet et bleu."
             else:
                 continue
                 
