@@ -351,7 +351,7 @@ def get_answer(user_question):
                 return s.strip(), 1.0
         return ("Aucune information précise sur les matériaux n'a été trouvée.", 0.3)
 
-    # === UTILISER LE MAPPING FAQ GÉNÉRAL ===
+    # === UTILISER LE MAPPING FAQ GÉNÉRAL (VERSION MULTI-RÉPONSES) ===
     collected_answers = []
     checked_columns = set()
 
@@ -384,8 +384,18 @@ def get_answer(user_question):
                         break
                 if not answer:
                     answer = extract_best_sentence(user_question, paragraph)
+            # Gestion des couleurs dans le paragraphe caractéristiques
+            elif keyword in ["couleur", "couleurs", "noir", "blanc", "bleu", "violet"]:
+                for s in re.split(r"(?<=[.!?])\s+", paragraph):
+                    s_lower = s.lower()
+                    if any(c in s_lower for c in ["couleur", "noir", "blanc", "bleu", "violet", "disponible"]):
+                        answer = s.strip()
+                        break
+                if not answer:
+                    answer = extract_best_sentence(user_question, paragraph)
             else:
                 continue
+                
         elif column == "specifications_4":
             camera_text = str(product[column].iloc[0])
             if "200 MP" in camera_text:
@@ -395,10 +405,12 @@ def get_answer(user_question):
         else:
             answer = str(product[column].iloc[0])
 
+        # On accumule la réponse si elle existe et qu'elle n'est pas déjà là
         if answer and answer not in collected_answers:
             collected_answers.append(answer)
             checked_columns.add(column)
 
+    # Si on a trouvé plusieurs réponses (ex: prix + couleurs), on les assemble !
     if collected_answers:
         return " ".join(collected_answers), 1.0
 
