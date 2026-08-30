@@ -313,6 +313,8 @@ def get_answer(user_question):
                 s_lower = s.lower()
                 if any(term in s_lower for term in ["nuit", "optique", "traitement", "bruit", "lumineux", "sombre"]):
                     return s.strip(), 1.0
+            
+            # C'est cette ligne qui doit s'exécuter tout de suite si rien n'est trouvé dans le texte :
             return ("Le Samsung Galaxy S26 Ultra intègre des optimisations logicielles poussées pour garantir des clichés de nuit nets et lumineux.", 1.0)
         # 2. SI LA QUESTION CONCERNE LE SELFIE / CAMÉRA FRONTALE
         if any(w in question for w in ["selfie", "frontale", "avant"]):
