@@ -313,7 +313,8 @@ def get_answer(user_question):
                 s_lower = s.lower()
                 if any(term in s_lower for term in ["nuit", "optique", "traitement", "bruit", "lumineux", "sombre"]):
                     return s.strip(), 1.0
-            return ("L'optique et le traitement logiciel du Galaxy S26 Ultra sont spécialement pensés pour la vidéo et les photos de nuit.", 1.0)
+            # Si aucune phrase spécifique n'est trouvée dans le paragraphe, on renvoie une phrase dédiée à la nuit au lieu des capteurs globaux :
+            return ("Le Samsung Galaxy S26 Ultra intègre des optimisations logicielles et un traitement d'image poussé pour garantir des clichés de nuit nets et lumineux.", 1.0)
 
         # 2. SI LA QUESTION CONCERNE LE SELFIE / CAMÉRA FRONTALE
         if any(w in question for w in ["selfie", "frontale", "avant"]):
