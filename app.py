@@ -68,8 +68,6 @@ if submit_button:
         answer, score = get_answer(user_input)
         st.success(answer)
         
-        # Conversion du score en pourcentage (on multiplie par 100 et on arrondit à l'entier)
-        score_percent = int(score * 100)
-        st.info(f"Score de similarité : {score_percent}%")  # <--- Nouvelle ligne
+         # <--- Nouvelle ligne
     else:
         st.warning("Please enter a question.")
