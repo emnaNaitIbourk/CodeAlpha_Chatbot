@@ -226,14 +226,16 @@ def get_answer(user_question):
     goodbye_words = ["au revoir", "bye", "salut", "à bientôt", "a bientot", "a+", "ciao", "merci"]
     if any(word in question for word in goodbye_words):
         return ("Au revoir ! J'espère avoir pu t'aider. N'hésite pas si tu as d'autres questions sur le Samsung Galaxy S26 Ultra.", 1.0)
-
+    # === FILTRE DE SÉCURITÉ : Bloquer les sujets hors-sujet ===
+    sujets_interdits = ["météo", "meteo", "pluie", "soleil", "match", "foot", "politique", "recette", "film", "musique"]
+    if any(sujet in question for sujet in sujets_interdits):
+        return ("Désolé, je ne peux pas répondre à cette question. Je me spécialise uniquement dans les caractéristiques du Samsung Galaxy S26 Ultra.", 0.0)
     # 2. Filtre des produits concurrents hors sujet
     other_products = ["iphone", "apple", "xiaomi", "redmi", "oppo", "huawei", "honor", "realme", "vivo", "google pixel", "nokia", "motorola"]
     if any(prod in question for prod in other_products):
         return ("Désolé, je ne peux pas répondre à cette question. Je me spécialise uniquement dans les caractéristiques du Samsung Galaxy S26 Ultra.", 0)
     # === PRIORITÉ ABSOLUE : COULEURS ===
-    if any(k in question for k in ["couleur", "couleurs", "noir", "blanc", "bleu", "violet"]):
-        return "Le Samsung Galaxy S26 Ultra est disponible en quatre couleurs : noir, blanc, violet et bleu.", 1.0
+    
     paragraph = str(product["caractéristiques"].iloc[0])
 
     # === PRIORITÉ ABSOLUE 1 : PROCESSEUR, PUCE & GAMING ===
@@ -413,8 +415,15 @@ def get_answer(user_question):
             checked_columns.add(column)
 
     # Si on a trouvé plusieurs réponses (ex: prix + couleurs), on les assemble !
+    # Si on a trouvé plusieurs réponses, on nettoie les doublons et on assemble proprement
     if collected_answers:
-        return " ".join(collected_answers), 1.0
+        seen = set()
+        unique_answers = []
+        for ans in collected_answers:
+            if ans not in seen:
+                seen.add(ans)
+                unique_answers.append(ans)
+        return " ".join(unique_answers), 1.0
 
     # === RECHERCHE PAR SIMILARITÉ (TF-IDF) ====
     best_question, score = search_question(user_question)
