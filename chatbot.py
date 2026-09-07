@@ -231,7 +231,9 @@ def get_answer(user_question):
     other_products = ["iphone", "apple", "xiaomi", "redmi", "oppo", "huawei", "honor", "realme", "vivo", "google pixel", "nokia", "motorola"]
     if any(prod in question for prod in other_products):
         return ("Désolé, je ne peux pas répondre à cette question. Je me spécialise uniquement dans les caractéristiques du Samsung Galaxy S26 Ultra.", 0)
-
+    # === PRIORITÉ ABSOLUE : COULEURS ===
+    if any(k in question for k in ["couleur", "couleurs", "noir", "blanc", "bleu", "violet"]):
+        return "Le Samsung Galaxy S26 Ultra est disponible en quatre coloris : noir, blanc, violet et bleu.", 1.0
     paragraph = str(product["caractéristiques"].iloc[0])
 
     # === PRIORITÉ ABSOLUE 1 : PROCESSEUR, PUCE & GAMING ===
