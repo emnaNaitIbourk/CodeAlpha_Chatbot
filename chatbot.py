@@ -295,7 +295,7 @@ def get_answer(user_question):
         "où peut-on acheter", "précommande", "precommande", "précommander", "precommander", "commander",
         "acheter", "achat", "acheter le téléphone", "où acheter", "ou acheter", "disponible à l'achat",
         "puissant", "puissance", "nouveau", "nouvelle", "modèle", "modele", "qualité", "qualite",
-        "selfie", "frontale", "avant", "caméra avant","gaming"
+        "selfie", "frontale", "avant", "caméra avant","gaming","ui","construction",
     ]
     
     ai_pattern = r"\b(ai|ia|intelligence artificielle|galaxy ai)\b"
