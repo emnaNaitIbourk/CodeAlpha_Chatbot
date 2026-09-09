@@ -256,7 +256,7 @@ def get_answer(user_question):
     ]
     
     ai_pattern = r"\b(ai|ia|intelligence artificielle|galaxy ai)\b"
-    has_allowed = any(word in question for word in allowed_words) or bool(re.search(ai_pattern, question))
+    has_allowed = any(re.search(r'\b' + re.escape(word) + r'\b', question) for word in allowed_words) or bool(re.search(ai_pattern, question))
     if not has_allowed:
         return ("Désolé, je ne peux pas répondre à cette question. Je me spécialise uniquement dans les caractéristiques du Samsung Galaxy S26 Ultra.", 0)
 
