@@ -345,7 +345,7 @@ def get_answer(user_question):
                 if not answer:
                     answer = extract_best_sentence(user_question, paragraph)
             elif keyword in ["couleur", "couleurs", "noir", "blanc", "bleu", "violet"]:
-                answer = "Le Samsung Galaxy S26 Ultra est disponible en quatre coloris : noir, blanc, violet et bleu."
+                answer = "Le Samsung Galaxy S26 Ultra est disponible en quatre couleurs : noir, blanc, violet et bleu."
             elif keyword in ["matériau", "matériaux", "materiau", "materiaux", "aluminium", "construction", "gorilla", "verre", "ip68", "eau", "étanche", "etanche"]:
                 answer = "Sa construction combine un cadre en aluminium et du verre Corning Gorilla Glass, avec une certification IP68 (résistance à l'eau et à la poussière)."
             else:
