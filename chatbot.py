@@ -226,63 +226,16 @@ def get_answer(user_question):
     goodbye_words = ["au revoir", "bye", "salut", "à bientôt", "a bientot", "a+", "ciao", "merci"]
     if any(word in question for word in goodbye_words):
         return ("Au revoir ! J'espère avoir pu t'aider. N'hésite pas si tu as d'autres questions sur le Samsung Galaxy S26 Ultra.", 1.0)
-    # === FILTRE DE SÉCURITÉ : Bloquer les sujets hors-sujet ===
+        
+    # === FILTRE DE SÉCURITÉ : Sujets interdits ===
     sujets_interdits = ["météo", "meteo", "pluie", "soleil", "match", "foot", "politique", "recette", "film", "musique"]
     if any(sujet in question for sujet in sujets_interdits):
         return ("Désolé, je ne peux pas répondre à cette question. Je me spécialise uniquement dans les caractéristiques du Samsung Galaxy S26 Ultra.", 0.0)
-    # 2. Filtre des produits concurrents hors sujet
+        
+    # 2. Filtre des produits concurrents
     other_products = ["iphone", "apple", "xiaomi", "redmi", "oppo", "huawei", "honor", "realme", "vivo", "google pixel", "nokia", "motorola"]
     if any(prod in question for prod in other_products):
         return ("Désolé, je ne peux pas répondre à cette question. Je me spécialise uniquement dans les caractéristiques du Samsung Galaxy S26 Ultra.", 0)
-    # === PRIORITÉ ABSOLUE : COULEURS ===
-    
-    paragraph = str(product["caractéristiques"].iloc[0])
-
-    # === PRIORITÉ ABSOLUE 1 : PROCESSEUR, PUCE & GAMING ===
-    performance_keywords = ["processeur", "cpu", "puce", "snapdragon", "performance", "performant", "puissant", "puissance", "npu"]
-    if any(keyword in question for keyword in performance_keywords):
-        proc_text = str(product["specifications_2"].iloc[0])
-        return proc_text, 1.0
-
-    # === PRIORITÉ ABSOLUE 2 : GALAXY AI / INTELLIGENCE ARTIFICIELLE ===
-    ai_pattern_check = r"\b(ai|ia|galaxy ai|intelligence artificielle)\b"
-    if re.search(ai_pattern_check, question):
-        sentences = re.split(r"(?<=[.!?])\s+", paragraph)
-        for s in sentences:
-            s_lower = s.lower()
-            if any(kw in s_lower for kw in ["retouche", "creative studio", "stickers", "now nudge", "now brief"]):
-                return s.strip(), 1.0
-        for s in sentences:
-            s_lower = s.lower()
-            if "galaxy ai" in s_lower and ("facilite" in s_lower or "fonction" in s_lower or "assistant" in s_lower):
-                return s.strip(), 1.0
-        for s in sentences:
-            s_lower = s.lower()
-            if "npu" in s_lower or "traitement" in s_lower:
-                return s.strip(), 1.0
-        return ("Galaxy AI intègre des outils de retouche photo et des assistants intelligents.", 1.0)
-
-    # === 3. GESTION PRIORITAIRE ET STRICTE DE LA CONNECTIVITÉ ===
-    connectivite_answers = []
-    if any(k in question for k in ["wifi", "wi-fi", "bluetooth", "powershare", "power share"]):
-        if any(k in question for k in ["wifi", "wi-fi"]):
-            for s in re.split(r"(?<=[.!?])\s+", paragraph):
-                if "wi-fi 7" in s.lower() or "wifi 7" in s.lower():
-                    connectivite_answers.append("Le téléphone prend en charge le Wi-Fi 7.")
-                    break
-        if "bluetooth" in question:
-            for s in re.split(r"(?<=[.!?])\s+", paragraph):
-                if "bluetooth 6.0" in s.lower():
-                    connectivite_answers.append("Le téléphone utilise le Bluetooth 6.0.")
-                    break
-        if any(k in question for k in ["powershare", "power share"]):
-            for s in re.split(r"(?<=[.!?])\s+", paragraph):
-                if "powershare" in s.lower() or "power share" in s.lower():
-                    connectivite_answers.append(s.strip())
-                    break
-
-    if connectivite_answers:
-        return " ".join(connectivite_answers), 1.0
 
     # 4. SÉCURITÉ : Liste des mots autorisés
     allowed_words = [
@@ -307,67 +260,70 @@ def get_answer(user_question):
     if not has_allowed:
         return ("Désolé, je ne peux pas répondre à cette question. Je me spécialise uniquement dans les caractéristiques du Samsung Galaxy S26 Ultra.", 0)
 
-    # === A. GESTION INTELLIGENTE DES PHOTOS ===
-    if any(word in question for word in ["photo", "photos", "qualité", "qualite", "caméra", "camera", "megapixel", "mégapixels", "capteur", "nuit", "nocturne", "zoom", "selfie", "frontale", "avant"]):
-        sentences = re.split(r"(?<=[.!?])\s+", paragraph)
-
-        # 1. SI LA QUESTION CONCERNE LA NUIT (Priorité haute pour la nuit)
-        if any(w in question for w in ["nuit", "nocturne", "basse lumière", "sombre", "lumière"]):
-            # On renvoie directement la phrase de secours, sans bloquer sur des mots introuvables !
-            return ("Le Samsung Galaxy S26 Ultra intègre des optimisations logicielles poussées pour garantir des clichés de nuit nets et lumineux.", 1.0)
-            
-            
-        # 2. SI LA QUESTION CONCERNE LE SELFIE / CAMÉRA FRONTALE
-        if any(w in question for w in ["selfie", "frontale", "avant"]):
-            for s in sentences:
-                if any(w in s.lower() for w in ["selfie", "frontale", "12 mp"]):
-                    return s.strip(), 1.0
-            return ("La caméra frontale (selfie) du Samsung Galaxy S26 Ultra possède une résolution de 12.0 MP.", 1.0)
-
-        # 3. SI LA QUESTION CONCERNE LE ZOOM
-        if any(w in question for w in ["zoom", "loin", "éloigné", "eloigne"]):
-            for s in sentences:
-                if "zoom" in s.lower():
-                    return s.strip(), 1.0
-
-        # 4. SI LA QUESTION CONCERNE LA QUALITÉ GÉNÉRALE OU LES CAPTEURS ARRIÈRE
-        if "specifications_4" in product.columns:
-            camera_text = str(product["specifications_4"].iloc[0])
-            if camera_text and camera_text.lower() != "nan":
-                return camera_text, 1.0
-
-        return ("Le Samsung Galaxy S26 Ultra dispose d'un système photo avancé ultra performant.", 1.0)
-
-    # === B. Résistance à l'eau / IP68 ===
-    if any(word in question for word in ["eau", "étanche", "etanche", "ip68", "résistant à l'eau", "resistant a l'eau", "résistant à l’eau", "resistant a l’eau"]):
-        sentences = re.split(r"(?<=[.!?])\s+", paragraph)
-        for s in sentences:
-            s_lower = s.lower()
-            if "ip68" in s_lower or "eau" in s_lower or "résistant à l'eau" in s_lower or "resistant a l'eau" in s_lower:
-                return s.strip(), 1.0
-        return ("Aucune information précise sur la résistance à l'eau n'a été trouvée.", 0.3)
-
-    # === C. Matériaux / Design / Aluminium ===
-    if any(word in question for word in ["matériau", "matériaux", "materiau", "materiaux", "aluminium", "construction", "titane", "gorilla", "verre"]):
-        sentences = re.split(r"(?<=[.!?])\s+", paragraph)
-        for s in sentences:
-            if any(m in s.lower() for m in ["aluminium", "titane", "gorilla", "verre", "cadre", "dos", "armor"]):
-                return s.strip(), 1.0
-        return ("Aucune information précise sur les matériaux n'a été trouvée.", 0.3)
-
-    # === UTILISER LE MAPPING FAQ GÉNÉRAL (VERSION MULTI-RÉPONSES) ===
+    paragraph = str(product["caractéristiques"].iloc[0])
     collected_answers = []
     checked_columns = set()
 
+    # === A. PROCESSEUR / PERFORMANCES (Accumulation) ===
+    performance_keywords = ["processeur", "cpu", "puce", "snapdragon", "performance", "performant", "puissant", "puissance", "npu"]
+    if any(keyword in question for keyword in performance_keywords):
+        proc_text = str(product["specifications_2"].iloc[0])
+        collected_answers.append(proc_text)
+
+    # === B. GALAXY AI / IA (Accumulation) ===
+    ai_pattern_check = r"\b(ai|ia|galaxy ai|intelligence artificielle)\b"
+    if re.search(ai_pattern_check, question):
+        ai_ans = None
+        sentences = re.split(r"(?<=[.!?])\s+", paragraph)
+        for s in sentences:
+            s_lower = s.lower()
+            if any(kw in s_lower for kw in ["retouche", "creative studio", "stickers", "now nudge", "now brief"]):
+                ai_ans = s.strip()
+                break
+        if not ai_ans:
+            ai_ans = "Galaxy AI intègre des outils de retouche photo et des assistants intelligents."
+        collected_answers.append(ai_ans)
+
+    # === C. CONNECTIVITÉ (Accumulation) ===
+    if any(k in question for k in ["wifi", "wi-fi", "bluetooth", "powershare", "power share"]):
+        if any(k in question for k in ["wifi", "wi-fi"]):
+            collected_answers.append("Le téléphone prend en charge le Wi-Fi 7.")
+        if "bluetooth" in question:
+            collected_answers.append("Le téléphone utilise le Bluetooth 6.0.")
+        if any(k in question for k in ["powershare", "power share"]):
+            for s in re.split(r"(?<=[.!?])\s+", paragraph):
+                if "powershare" in s.lower() or "power share" in s.lower():
+                    collected_answers.append(s.strip())
+                    break
+
+    # === D. PHOTOS / CAMÉRA (Accumulation) ===
+    if any(word in question for word in ["photo", "photos", "qualité", "qualite", "caméra", "camera", "megapixel", "mégapixels", "capteur", "nuit", "nocturne", "zoom", "selfie", "frontale", "avant"]):
+        if any(w in question for w in ["nuit", "nocturne", "basse lumière", "sombre", "lumière"]):
+            collected_answers.append("Le Samsung Galaxy S26 Ultra intègre des optimisations logicielles poussées pour garantir des clichés de nuit nets et lumineux.")
+        elif any(w in question for w in ["selfie", "frontale", "avant"]):
+            collected_answers.append("La caméra frontale (selfie) du Samsung Galaxy S26 Ultra possède une résolution de 12.0 MP.")
+        elif any(w in question for w in ["zoom", "loin", "éloigné", "eloigne"]):
+            for s in re.split(r"(?<=[.!?])\s+", paragraph):
+                if "zoom" in s.lower():
+                    collected_answers.append(s.strip())
+                    break
+        elif "specifications_4" in product.columns:
+            camera_text = str(product["specifications_4"].iloc[0])
+            if camera_text and camera_text.lower() != "nan":
+                collected_answers.append(camera_text)
+
+    # === E. RÉSISTANCE EAU / POUSSIÈRE (Accumulation) ===
+    if any(word in question for word in ["eau", "étanche", "etanche", "ip68", "résistant à l'eau", "resistant a l'eau", "poussière", "poussiere", "poussiére"]):
+        collected_answers.append("Sa construction bénéficie de la certification IP68 pour une résistance optimale à l'eau et à la poussière.")
+
+    # === F. UTILISER LE MAPPING FAQ POUR LE RESTE (Prix, Batterie, Couleurs, etc.) ===
     for keyword, column in faq_mapping.items():
         if keyword not in question:
             continue
-
         if column in checked_columns and column != "caractéristiques":
             continue
 
         answer = None
-
         if column == "caractéristiques":
             battery_terms = ["batterie", "autonomie", "mah", "charge", "charger"]
             is_battery_query = any(bt in question for bt in battery_terms)
@@ -388,17 +344,12 @@ def get_answer(user_question):
                         break
                 if not answer:
                     answer = extract_best_sentence(user_question, paragraph)
-            # Gestion précise des couleurs (on prend juste la phrase concernée)
             elif keyword in ["couleur", "couleurs", "noir", "blanc", "bleu", "violet"]:
-                for s in re.split(r"(?<=[.!?])\s+", paragraph):
-                    s_lower = s.lower()
-                    if any(c in s_lower for c in ["couleur", "disponible en"]):
-                        answer = s.strip()
-                        break
-                if not answer:
-                    answer = "Il est disponible en plusieurs coloris : noir, blanc, violet et bleu."
+                answer = "Le Samsung Galaxy S26 Ultra est disponible en quatre coloris : noir, blanc, violet et bleu."
+            elif keyword in ["matériau", "matériaux", "materiau", "materiaux", "aluminium", "construction", "gorilla", "verre", "ip68", "eau", "étanche", "etanche"]:
+                answer = "Sa construction combine un cadre en aluminium et du verre Corning Gorilla Glass, avec une certification IP68 (résistance à l'eau et à la poussière)."
             else:
-                continue
+                answer = extract_best_sentence(user_question, paragraph)
                 
         elif column == "specifications_4":
             camera_text = str(product[column].iloc[0])
@@ -409,13 +360,11 @@ def get_answer(user_question):
         else:
             answer = str(product[column].iloc[0])
 
-        # On accumule la réponse si elle existe et qu'elle n'est pas déjà là
         if answer and answer not in collected_answers:
             collected_answers.append(answer)
             checked_columns.add(column)
 
-    # Si on a trouvé plusieurs réponses (ex: prix + couleurs), on les assemble !
-    # Si on a trouvé plusieurs réponses, on nettoie les doublons et on assemble proprement
+    # Si on a accumulé des réponses, on les fusionne toutes proprement !
     if collected_answers:
         seen = set()
         unique_answers = []
@@ -427,7 +376,6 @@ def get_answer(user_question):
 
     # === RECHERCHE PAR SIMILARITÉ (TF-IDF) ====
     best_question, score = search_question(user_question)
-
     if score < 0.35:
         return ("Je n'ai pas trouvé d'information précise concernant votre demande sur le Samsung Galaxy S26 Ultra.", score)
 
