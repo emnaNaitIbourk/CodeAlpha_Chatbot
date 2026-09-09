@@ -372,7 +372,7 @@ def get_answer(user_question):
             if ans not in seen:
                 seen.add(ans)
                 unique_answers.append(ans)
-        return " ".join(unique_answers), 1.0
+        return ",".join(unique_answers), 1.0
 
     # === RECHERCHE PAR SIMILARITÉ (TF-IDF) ====
     best_question, score = search_question(user_question)
